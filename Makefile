@@ -2,9 +2,9 @@ HDR_DIR = header C:\dev\lib\include C:\dev\lib\include\Shar\headers
 HEADER = $(addprefix -I,$(HDR_DIR))
 LIB_DIR = C:\dev\lib\lib-glew\Release\x64\ C:\dev\lib\lib-mingw\ C:\dev\lib\lib-sharo
 LIB = $(addprefix -L, $(LIB_DIR))
-LIB_NAMES = glfw3 glew32s opengl32 gdi32 sharo
+LIB_NAMES = glfw3 glew32s opengl32 gdi32 sharo winmm
 LIBRARY = $(addprefix -l,$(LIB_NAMES))
-CCOPTION = Wall std=gnu++11 D__USE_MINGW_ANSI_STDIO=1 g
+CCOPTION = std=gnu++11 O3 
 FLAGS = $(addprefix -,$(CCOPTION))
 CC = g++
 OBJ_DIR = obj

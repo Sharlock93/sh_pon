@@ -33,7 +33,8 @@ GLFWwindow* init() {
 
 
     GLFWwindow *window = glfwCreateWindow(SCREEN_SIZE_X, SCREEN_SIZE_Y, "Shape Test", nullptr, nullptr);
-
+    
+    glfwSetWindowPos(window, 500, 500);
     glfwMakeContextCurrent(window);
 
     glewExperimental = true;
@@ -142,31 +143,34 @@ char collision_inner_rect(sh_circle &circle, sh_rect &rect) {
 }
 
 static void stall_program(real32 target_frame_time, real32 time_elapsed_for_frame, LARGE_INTEGER last_counter) {
-
-
     if(time_elapsed_for_frame < target_frame_time) {
+
+
         DWORD sleep_ms =  (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
 
-        Sleep(sleep_ms);
-        int64 loop_count = 0; 
-        while(time_elapsed_for_frame < target_frame_time) { 
-            loop_count++; 
-            std::cout << "Inside before loop TF: " << target_frame_time << " TE: " << time_elapsed_for_frame*1000;
-            std::cout << " sleep for: " << sleep_ms << " Sleep Sec: ";
-            std::cout << (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
-            std::cout << " loop_count: " << loop_count << std::endl;
-            time_elapsed_for_frame = win32_get_seconds_elapsed(last_counter, win32_get_wall_clock());  
-            std::cout << "inside after before loop TF: " << target_frame_time << " TE: " << time_elapsed_for_frame*1000;
-            std::cout << " sleep for: " << sleep_ms << " Sleep Sec: ";
-            std::cout << (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
-            std::cout << " loop_count: " << loop_count << std::endl;
-        }
+        std::cout << "TE: " << time_elapsed_for_frame*1000 << "\t";
+        std::cout << "TF: " << target_frame_time*1000 << "\t";
+        std::cout << "TS: " << sleep_ms << "\t";
+
+        Sleep(1);
+
+        real32 after_sleep_time_pass = win32_get_seconds_elapsed(last_counter, win32_get_wall_clock());
+
+        std::cout << "ASTP: " << after_sleep_time_pass*1000 << std::endl;
+        // int64 loop_count = 0; 
+        // while(time_elapsed_for_frame < target_frame_time) { 
+        //     loop_count++; 
+        //     time_elapsed_for_frame = win32_get_seconds_elapsed(last_counter, win32_get_wall_clock());  
+        // }
     }
 }
 
 int main(int argc, char ** argv) {
+    timeBeginPeriod(1);
     LARGE_INTEGER freq;
     QueryPerformanceFrequency(&freq);
+
+    
 
     gl_perf_count_frequency = freq.QuadPart;
 
@@ -174,14 +178,8 @@ int main(int argc, char ** argv) {
 
 #if 1
     GLFWwindow *window = init();
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
     
-    TIMECAPS time_res;
-    
-    timeGetDevCaps(&time_res, sizeof(time_res)); 
-    timeBeginPeriod(time_res.wPeriodMin);
-
-    std::cout << "hello " << time_res.wPeriodMax<< std::endl;
     bool run = true;
     
     sh_circle ball;
@@ -201,7 +199,7 @@ int main(int argc, char ** argv) {
 
     double current_time = glfwGetTime();
 
-    float ball_velocity = 50;
+    float ball_velocity = 500;
     int frames_per_second = 60;
     int size_change_velocity = 50;
     float physics_dt = 1.0f/60.0f; 
@@ -215,29 +213,34 @@ int main(int argc, char ** argv) {
     double alpha = 0;
     int frame_done = 2;
 
+    sh_circle balls[5000];
+    for(int i = 0; i < 500; i++) {
+        balls[i].set_position(sin(i), cos(i));
+    }
     
     LARGE_INTEGER last_counter = win32_get_wall_clock(); 
 
     while(run) {
         glfwPollEvents();
-        
+#if 1        
         double new_time = glfwGetTime();
         double frame_time = new_time - current_time;
 
        
         total_time += (frame_time > physics_dt) ? physics_dt : frame_time;
         current_time = new_time;
-
+#endif
        
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         if((glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)) {
                 run  = false;
+                glfwSetWindowShouldClose(window, true);
         } 
         
         
-        flash.render();
-
-        while((total_time >= physics_dt)) {
+        // flash.render();
+#if 1
+        while((total_time >= physics_dt) && (frame_done-- > 0)) {
 
 
             previous_position = current_positon;
@@ -246,41 +249,47 @@ int main(int argc, char ** argv) {
 
             vec2 collision_result = colision_inverse(collision_inner_rect(ball, window_rect)); 
             ball_velocity = ball_velocity*collision_result.x;
-
-
+            
+            // for(int i = 0; i < 5000; ++i) {
+            //     balls[i].move_position(sin(i)*physics_dt, cos(i)*physics_dt);
+            // }
+            //
 
             total_time -= physics_dt;
-            frame_done--;
         }
 
         alpha = total_time / physics_dt;
 
-        frame_done = 2;
+        frame_done = 1;
 
         vec2 in_between_position = interpolate_vec2(previous_position, current_positon, alpha); 
         ball.set_position(in_between_position);
         // std::cout << in_between_position << std::endl;
-        
+#endif    
 
         ball.render();
-        
-       
 
-        glfwSwapBuffers(window);
-        LARGE_INTEGER work_time = win32_get_wall_clock();
-        real32 work_time_for_frame = win32_get_seconds_elapsed(last_counter, work_time);
+
         
-        stall_program(target_frame_time, work_time_for_frame, last_counter);
-        
-        last_counter = win32_get_wall_clock(); 
+
+        // for(int i = 0; i < 5000; ++i) {
+        //     balls[i].render();
+        // }
+
+        glfwSwapBuffers(window);    
+
+        std::cout << win32_get_seconds_elapsed(last_counter, win32_get_wall_clock())*1000 << std::endl;
+        last_counter = win32_get_wall_clock();
+       
     }
 
 
-    timeEndPeriod(time_res.wPeriodMin);
+    timeEndPeriod(1);
+
 #endif
     
-    
-    glfwSetWindowShouldClose(window, true);
+    glfwDestroyWindow(window);
+    // glfwSetWindowShouldClose(window, true);
 
     system("pause");
     return 0;
