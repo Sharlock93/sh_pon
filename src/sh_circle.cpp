@@ -78,6 +78,7 @@ void sh_circle::set_position(vec2 pos) {
 }
 
 vec2 sh_circle::get_position() {
+    // std::cout << "postiton: " << _position << std::endl;
     return _position;
 }
 
@@ -126,6 +127,7 @@ void sh_circle::set_size(float r) {
 
 
 float sh_circle::get_size() {
+    // std::cout << "radius: " << _r << std::endl;
     return _r;
 }
 

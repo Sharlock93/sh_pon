@@ -8,153 +8,19 @@
 #include "..\header\sh_circle.h"
 #include <random>
 #include <cmath>
+#include <bitset>
+#include <stdio.h>
+#include <stdint.h>
 
+//Note(sharo): typedefs
+typedef float real32;
+typedef int64_t int64;
+
+//Note(Sharo): Globals
 #define SCREEN_SIZE_X 500
 #define SCREEN_SIZE_Y 500
+static int64 gl_perf_count_frequency;
 
-
-bool colision_rect(sh_circle &circle, sh_rect &rect);
-char colision_rect_inner(sh_circle &circle, sh_rect &rect);
-vec2 colision_inverse(char colision_result);
-
-struct game_state {
-    bool running;
-    GLFWwindow *window;
-    void game_loop();
-    game_state(GLFWwindow *wi);
-};
-
-
-struct timer {
-    double dt;
-    double prev_time;
-    timer();
-    void update_dt();
-};
-
-timer::timer() {
-    dt = 0;
-    prev_time = glfwGetTime();
-}
-
-void timer::update_dt() {
-    dt = glfwGetTime() - this->prev_time;
-    this->prev_time = glfwGetTime();
-}
-
-game_state::game_state(GLFWwindow *win) {
-    running = false;
-    this->window = win;
-}
-
-GLFWwindow* init();
-
-std::random_device rd;
-std::mt19937 mt(rd());
-std::uniform_real_distribution<float> dist(-10, 10);
-
-vec2 buffer[SCREEN_SIZE_X*SCREEN_SIZE_Y];
-
-int main(int argc, char ** argv) {
-    game_state game(init());   
-    game.running = true;
-        
-    GLuint vbo;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(buffer), buffer, GL_DYNAMIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    
-    for(int i = 0; i <= SCREEN_SIZE_X; i++) {
-        for(int j = 0; j <= SCREEN_SIZE_Y; j++) {
-            // std::cout << i*SCREEN_SIZE_X  + j<< std::endl;
-            buffer[i*SCREEN_SIZE_X + j] = vec2(i - SCREEN_SIZE_X/2.0, j-SCREEN_SIZE_Y/2.0);
-        } 
-    }    
-    glBufferData(GL_ARRAY_BUFFER, sizeof(buffer), buffer, GL_DYNAMIC_DRAW);
-    /*
-    {
-    
-        sh_circle test(0, 0, 5, vec4(1, 0, 0, 1), vec2(0, 0));
-        sh_rect paddle(0, -200, 10, 70);  
-        sh_rect win(0, 0, 500, 500); 
-        vec2 ball_vel(290, -280); 
-        vec2 after_tast(10, 0);
-        vec2 colision_change(1, 1);
-        float paddle_vel = 300;
-        
-        vec2 amama(10, 0);
-        
-        vec2 prev_pos = paddle.get_position(); 
-        float meow = 0;
-     
-        timer la_time;
-
-    }
-    */
-    
-    while(game.running) {
-        
-            
-            // la_time.update_dt();
-    
-            if(glfwGetKey(game.window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-                game.running = false; 
-            }
-                
-        
-            
-            /* { 
-            if(glfwGetKey(game.window, GLFW_KEY_A) == GLFW_PRESS) { 
-                paddle.move_position(-paddle_vel*la_time.dt, 0);
-            }
-    
-            if(glfwGetKey(game.window, GLFW_KEY_D) == GLFW_PRESS) { 
-                paddle.move_position(paddle_vel*la_time.dt, 0);
-            }
-    
-            glClear(GL_COLOR_BUFFER_BIT);  
-            colision_change = colision_inverse(colision_rect_inner(test, win));
-            if(colision_change.y < 0) {
-                ball_vel.x += dist(mt);
-            } else if(colision_change.x < 0) {
-                std::cout << "kladsjfjasdf" << std::endl;
-                ball_vel.y += dist(mt);
-            }
-    
-            ball_vel = vec2(ball_vel.x*colision_change.x, ball_vel.y*colision_change.y);
-            test.move_position(ball_vel.x*la_time.dt , ball_vel.y*la_time.dt); 
-            // std::cout << colision_change << std::endl;    
-            if(colision_rect(test, paddle))  { 
-                meow = (paddle.get_position() - prev_pos).x;
-                if(meow)
-                    ball_vel.x = -ball_vel.x*(meow/abs(meow)); 
-                ball_vel.y = -ball_vel.y;
-            }
-            
-            if((paddle.get_position().x-paddle.get_size().x/2.0) < -SCREEN_SIZE_X/2)
-                paddle.set_position(-250+paddle.get_size().x/2.0, paddle.get_position().y);
-            
-            if((paddle.get_position().x+paddle.get_size().x/2.0) > SCREEN_SIZE_X/2) 
-                paddle.set_position(250-paddle.get_size().x/2.0, paddle.get_position().y);
-    
-            paddle.render(); 
-    
-    
-            // win.render();     
-            test.render();
-            prev_pos = paddle.get_position(); 
-            // glDrawArrays(GL_POINTS, 0, 1);
-        } */
-
-        glDrawArrays(GL_POINTS, 0, SCREEN_SIZE_X*SCREEN_SIZE_Y);
-        glfwSwapBuffers(game.window);
-        glfwPollEvents();
-    }
-
-    return 0;
-}
 
 GLFWwindow* init() {
     int glw = glfwInit();
@@ -184,11 +50,21 @@ GLFWwindow* init() {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
 
-    glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(SCREEN_SIZE_X/2, -SCREEN_SIZE_X/2,
-                                               SCREEN_SIZE_Y/2, -SCREEN_SIZE_Y/2, -1, 1));
+    glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(SCREEN_SIZE_X/2.0f + 0.5f, -SCREEN_SIZE_X/2.0f,
+                                               SCREEN_SIZE_Y/2.0f, -SCREEN_SIZE_Y/2.0f - 0.5f, -1.0f, 1.0f));
     return window;
 }
 
+static inline LARGE_INTEGER win32_get_wall_clock() {
+    LARGE_INTEGER result;
+    QueryPerformanceCounter(&result);
+    return result;
+} 
+
+static inline real32 win32_get_seconds_elapsed(LARGE_INTEGER start, LARGE_INTEGER end) {
+    real32 result = ((real32)(end.QuadPart - start.QuadPart) / (real32)gl_perf_count_frequency);
+    return result;
+}
 
 vec2 colision_inverse(char colision_result) {
     vec2 ret(1, 1);
@@ -228,7 +104,11 @@ bool colision_rect(sh_circle &circle, sh_rect &rect) {
     return false;
 }
 
-char colision_rect_inner(sh_circle &circle, sh_rect &rect) {
+inline static vec2 interpolate_vec2(vec2 v1, vec2 v2, float alpha) {
+    return (v2*alpha  + v1*(1.0 - alpha));
+}
+
+char collision_inner_rect(sh_circle &circle, sh_rect &rect) {
     // 0000 4, bits, left, top, right, bottom, colid => set bit to 1;
     char colid = 0;
     vec2 rect_size = rect.get_size();
@@ -238,19 +118,171 @@ char colision_rect_inner(sh_circle &circle, sh_rect &rect) {
                    pos.x + rect_size.x/2.0 - circle.get_size(), pos.y - rect_size.y/2.0 + circle.get_size());
 
     if(circle.get_position().x <= rectanlge.x) { //left
+        circle.set_position(rectanlge.x, circle.get_position().y);
         colid |= (1 << 3);
     }
 
-    if(circle.get_position().x >= rectanlge.z) //right
+    if(circle.get_position().x >= rectanlge.z) { //right
+        circle.set_position(rectanlge.z, circle.get_position().y);
         colid |= (1 << 1);
+    }
 
-    if(circle.get_position().y >= rectanlge.y) //top
+    if(circle.get_position().y >= rectanlge.y){ //top
+        circle.set_position(circle.get_position().x, rectanlge.y );
         colid |= (1 << 2);
+    }
 
-    if(circle.get_position().y <= rectanlge.w) //bottom
+    if(circle.get_position().y <= rectanlge.w) { //bottom 
+        circle.set_position(circle.get_position().x, rectanlge.w );
         colid |= 1;
+    }
 
 
     return colid;
+}
+
+static void stall_program(real32 target_frame_time, real32 time_elapsed_for_frame, LARGE_INTEGER last_counter) {
+
+
+    if(time_elapsed_for_frame < target_frame_time) {
+        DWORD sleep_ms =  (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
+
+        Sleep(sleep_ms);
+        int64 loop_count = 0; 
+        while(time_elapsed_for_frame < target_frame_time) { 
+            loop_count++; 
+            std::cout << "Inside before loop TF: " << target_frame_time << " TE: " << time_elapsed_for_frame*1000;
+            std::cout << " sleep for: " << sleep_ms << " Sleep Sec: ";
+            std::cout << (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
+            std::cout << " loop_count: " << loop_count << std::endl;
+            time_elapsed_for_frame = win32_get_seconds_elapsed(last_counter, win32_get_wall_clock());  
+            std::cout << "inside after before loop TF: " << target_frame_time << " TE: " << time_elapsed_for_frame*1000;
+            std::cout << " sleep for: " << sleep_ms << " Sleep Sec: ";
+            std::cout << (DWORD)((target_frame_time - time_elapsed_for_frame)*1000);
+            std::cout << " loop_count: " << loop_count << std::endl;
+        }
+    }
+}
+
+int main(int argc, char ** argv) {
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+
+    gl_perf_count_frequency = freq.QuadPart;
+
+    std::cout << "pref " << freq.QuadPart << "   " << gl_perf_count_frequency << std::endl;
+
+#if 1
+    GLFWwindow *window = init();
+    glfwSwapInterval(0);
+    
+    TIMECAPS time_res;
+    
+    timeGetDevCaps(&time_res, sizeof(time_res)); 
+    timeBeginPeriod(time_res.wPeriodMin);
+
+    std::cout << "hello " << time_res.wPeriodMax<< std::endl;
+    bool run = true;
+    
+    sh_circle ball;
+    sh_rect window_rect;
+    sh_rect flash;
+
+    flash.set_size(5, 5);
+    flash.set_color(vec4(0, 1, 0, 1));
+    flash.set_position(0, 0);
+    
+
+    window_rect.set_size(500, 500);
+
+    ball.set_size(50); 
+    ball.set_color(vec4(1, 0, 0, 1));
+    ball.set_position(3, 6);
+
+    double current_time = glfwGetTime();
+
+    float ball_velocity = 50;
+    int frames_per_second = 60;
+    int size_change_velocity = 50;
+    float physics_dt = 1.0f/60.0f; 
+    
+    float target_frame_time = 1.0f/(float)frames_per_second;  
+    double total_time = 0;
+
+
+    vec2 previous_position = ball.get_position();
+    vec2 current_positon = ball.get_position();
+    double alpha = 0;
+    int frame_done = 2;
+
+    
+    LARGE_INTEGER last_counter = win32_get_wall_clock(); 
+
+    while(run) {
+        glfwPollEvents();
+        
+        double new_time = glfwGetTime();
+        double frame_time = new_time - current_time;
+
+       
+        total_time += (frame_time > physics_dt) ? physics_dt : frame_time;
+        current_time = new_time;
+
+       
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        if((glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)) {
+                run  = false;
+        } 
+        
+        
+        flash.render();
+
+        while((total_time >= physics_dt)) {
+
+
+            previous_position = current_positon;
+            ball.move_position(ball_velocity*physics_dt, 0);
+            current_positon = ball.get_position(); 
+
+            vec2 collision_result = colision_inverse(collision_inner_rect(ball, window_rect)); 
+            ball_velocity = ball_velocity*collision_result.x;
+
+
+
+            total_time -= physics_dt;
+            frame_done--;
+        }
+
+        alpha = total_time / physics_dt;
+
+        frame_done = 2;
+
+        vec2 in_between_position = interpolate_vec2(previous_position, current_positon, alpha); 
+        ball.set_position(in_between_position);
+        // std::cout << in_between_position << std::endl;
+        
+
+        ball.render();
+        
+       
+
+        glfwSwapBuffers(window);
+        LARGE_INTEGER work_time = win32_get_wall_clock();
+        real32 work_time_for_frame = win32_get_seconds_elapsed(last_counter, work_time);
+        
+        stall_program(target_frame_time, work_time_for_frame, last_counter);
+        
+        last_counter = win32_get_wall_clock(); 
+    }
+
+
+    timeEndPeriod(time_res.wPeriodMin);
+#endif
+    
+    
+    glfwSetWindowShouldClose(window, true);
+
+    system("pause");
+    return 0;
 }
 
