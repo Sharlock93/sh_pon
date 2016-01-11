@@ -15,13 +15,14 @@
 */
 
 #define GLEW_STATIC
-#include "..\headers\sh_shapes.h"
+#include "..\header\sh_shapes.h"
 #include "..\..\GL\glew.h" 
 #include "..\..\Shar\headers\shar.h"
 #include "..\..\Shar\headers\sharfun.h"
 #include <iostream>
 
 sh_rect::sh_rect(float x, float y, float rect_height, float rect_width, vec4 color) {
+
 
     _position = vec2(x, y);
 
@@ -38,7 +39,12 @@ sh_rect::sh_rect(float x, float y, float rect_height, float rect_width, vec4 col
     data[3] = vec2(x + _width/2.0, y - _height/2.0);
     data[4] = vec2(x - _width/2.0, y - _height/2.0);
     data[5] = vec2(x - _width/2.0, y + _height/2.0);
-    
+
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
+
     glGenBuffers(1, &_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
@@ -53,6 +59,11 @@ sh_rect::sh_rect() {
     _height = 5;
     _width = 5;
     _color = vec4(1, 1, 1, 1);
+
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
     // _rotation = mat2x2(1);
     
     data[0] = vec2(- _width/2.0, + _height/2.0);
@@ -87,6 +98,11 @@ void sh_rect::render() {
 void sh_rect::set_position(float x, float y) {
     vec2 diff = vec2(-_position.x + x, -_position.y + y);
     _position = vec2(x, y);
+    
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
 
     for(int i = 0; i < 6; i++) {
         data[i] = data[i] + diff;
@@ -103,7 +119,12 @@ void sh_rect::set_position(vec2 addvec) {
     for(int i = 0; i < 6; i++) {
         data[i] = data[i] + diff;
     }
-
+    
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
+    
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(data), data);
 }
@@ -111,7 +132,12 @@ void sh_rect::set_position(vec2 addvec) {
 void sh_rect::move_position(float x, float y) {
     _position = _position + vec2(x, y);
     _center = _center + vec2(x, y);
-
+    
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
+    
     for(int i = 0; i < 6; i++) {
         data[i].x = data[i].x + x;
         data[i].y = data[i].y + y;
@@ -127,6 +153,10 @@ void sh_rect::move_position(vec2 addvec) {
     _position = _position + addvec;
     _center = _center + addvec;
     
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
 
     for(int i = 0; i < 6; i++) {
         data[i] = data[i] + addvec;
@@ -167,7 +197,13 @@ void sh_rect::set_size(float width, float height) {
     data[4] = vec2(data[4].x - diffx/2.0, data[4].y - diffy/2.0);
     data[5] = vec2(data[5].x - diffx/2.0, data[5].y + diffy/2.0);
     
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
+
     glGenBuffers(1, &_vbo);
+
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -188,12 +224,18 @@ void sh_rect::rotate(float angle) {
 
     move_position(-_center.x, -_center.y);
     
+   
     _position = _position*rot;
     for(int i = 0; i < 6; i++) {
        data[i] = data[i]*rot;
     }
 
     move_position(cur_cen);
+
+    _left = (_position.x - _width/2.0f);
+    _right = (_position.x + _width/2.0f);
+    _top = (_position.y + _height/2.0f);
+    _bottom = (_position.y - _height/2.0f);
 
     // _rotation = _rotation*rot;
 

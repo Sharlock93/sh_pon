@@ -39,7 +39,6 @@ public:
     
     void render();
 
-private:
     GLuint _vbo;
     vec2 _position;
     vec2 _center;
@@ -48,6 +47,16 @@ private:
     float _height;
     float _width;
     
+    union {
+        struct {
+            float _left;
+            float _right;
+            float _top;
+            float _bottom;
+        };
+        
+        vec4 walls;
+    };
     vec2 data[6];
 
     //possible other thingy to do.
