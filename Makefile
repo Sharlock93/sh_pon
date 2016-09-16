@@ -12,17 +12,26 @@ OBJ = main.o sh_circle.o sh_shapes.o
 BUILD_DIR = build
 SRC_DIR = S:\Test\sh_pong\src
 
+all:$(BUILD_DIR)\sh_pong.exe $(BUILD_DIR)\game_logic.dll
+
 $(BUILD_DIR)\sh_pong.exe: $(addprefix $(OBJ_DIR)\,$(OBJ)) 
-	 $(CC) $(FLAGS) $(addprefix $(OBJ_DIR)\,$(OBJ)) -o $(BUILD_DIR)\sh_pong.exe $(LIB) $(LIBRARY)
+	$(CC) $(FLAGS) $(addprefix $(OBJ_DIR)\,$(OBJ)) -o $(BUILD_DIR)\sh_pong.exe $(LIB) $(LIBRARY)
+
+$(BUILD_DIR)\game_logic.dll: $(OBJ_DIR)\game_logic.o 
+	$(CC) $(FLAGS) obj\game_logic.o obj\sh_circle.o -shared -o $(BUILD_DIR)\game_logic.dll  $(LIB) $(LIBRARY)
+
+$(OBJ_DIR)\game_logic.o: $(SRC_DIR)\game_logic.cpp 
+	$(CC) $(FLAGS) -c $(SRC_DIR)\game_logic.cpp -o $(OBJ_DIR)\game_logic.o $(HEADER)
 
 $(OBJ_DIR)\main.o: $(SRC_DIR)\main.cpp 
-	 $(CC) $(FLAGS) -c $(SRC_DIR)\main.cpp -o $(OBJ_DIR)\main.o $(HEADER)
+	$(CC) $(FLAGS) -c $(SRC_DIR)\main.cpp -o $(OBJ_DIR)\main.o $(HEADER)
+
 
 $(OBJ_DIR)\sh_circle.o: $(SRC_DIR)\sh_circle.cpp 
-	 $(CC) $(FLAGS) -c $(SRC_DIR)\sh_circle.cpp -o $(OBJ_DIR)\sh_circle.o $(HEADER)
+	$(CC) $(FLAGS) -c $(SRC_DIR)\sh_circle.cpp -o $(OBJ_DIR)\sh_circle.o $(HEADER)
 
 $(OBJ_DIR)\sh_shapes.o: $(SRC_DIR)\sh_shapes.cpp 
-	 $(CC) $(FLAGS) -c $(SRC_DIR)\sh_shapes.cpp -o $(OBJ_DIR)\sh_shapes.o $(HEADER)
+	$(CC) $(FLAGS) -c $(SRC_DIR)\sh_shapes.cpp -o $(OBJ_DIR)\sh_shapes.o $(HEADER)
 
 
 clean: 

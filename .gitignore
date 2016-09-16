@@ -1,6 +1,6 @@
 build
 *.obj
-build-win
+buildwin
 obj
 FsafFSs.txt
 glew-1.13.0/
