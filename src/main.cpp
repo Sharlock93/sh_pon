@@ -7,32 +7,65 @@
 #include <game_logic.h>
 #include <sh_rect.h>
 #include <sh_line.h>
+#include <stdio.h>
 
 //Note(sharo): typedefs
 typedef float real32;
 typedef int64_t int64;
 
 //Note(Sharo): Globals
-#define SCREEN_SIZE_X 500
-#define SCREEN_SIZE_Y 500
+#define SCREEN_SIZE_X 500 
+#define SCREEN_SIZE_Y 500 
 
-mouse_state mouse_st = {};
+input_state inputs_state = {};
 
 // const double time_change = 0.01;
+//
+static void toggle_fullscreen(game_state *gm, GLFWwindow *window) {
+    if(gm->full_screen) {
+        glfwSetWindowMonitor(window, NULL, 0, 0, SCREEN_SIZE_X, SCREEN_SIZE_Y, GLFW_DONT_CARE);
+        glViewport(0, 0, SCREEN_SIZE_X, SCREEN_SIZE_Y);
+        gm->window_width_height = vec2(SCREEN_SIZE_X, SCREEN_SIZE_Y);
+        glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(gm->window_width_height.x/2.0f + 0.5f, -gm->window_width_height.x/2.0f,
+                                               gm->window_width_height.y/2.0f, -gm->window_width_height.y/2.0f - 0.5f, -1.0f, 1.0f));
+        gm->full_screen = 0;
+    } else {
+        glfwSetWindowMonitor(window, glfwGetPrimaryMonitor(), 0, 0, 1366, 768, GLFW_DONT_CARE);
+        glViewport(0, 0, 1366, 768);
+        gm->window_width_height = vec2(1366, 768);
+        glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(gm->window_width_height.x/2.0f + 0.5f, -gm->window_width_height.x/2.0f,
+                                               gm->window_width_height.y/2.0f, -gm->window_width_height.y/2.0f - 0.5f, -1.0f, 1.0f));
+        gm->full_screen = 1;
+    }
+
+}
 
 static void mouse_pos(GLFWwindow *window, double x, double y) {
-    mouse_st.mouse_x = x - 250;
-    mouse_st.mouse_y = 250 - y;
+    inputs_state.mouse.mouse_x = x - 250;
+    inputs_state.mouse.mouse_y = 250 - y;
+}
+
+static void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {
+    if(key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+        inputs_state.keyboard.arrow_left = 1;
+    } else if(key == GLFW_KEY_LEFT && action == GLFW_RELEASE) {
+        inputs_state.keyboard.arrow_left = 0;
+    }
+    
+    if(key == GLFW_KEY_RIGHT && action == GLFW_PRESS)
+        inputs_state.keyboard.arrow_right = 1;
+    else if(key == GLFW_KEY_RIGHT && action == GLFW_RELEASE) 
+        inputs_state.keyboard.arrow_right = 0;
+
 }
 
 static void mouse_button_call(GLFWwindow *window, int button, int action, int modes) {
     if((button == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_PRESS)) {
-        mouse_st.left_button = 1;
+         inputs_state.mouse.left_button = 1;
     } else if((button == GLFW_MOUSE_BUTTON_LEFT) && (action == GLFW_RELEASE)) {
-        mouse_st.left_button = 0;
-        mouse_st.obj = nullptr;
+        inputs_state.mouse.left_button = 0;
+        inputs_state.mouse.hot_object = nullptr;
     }
-
 }
 
 GLFWwindow* init(game_state *gamestate) {
@@ -42,15 +75,19 @@ GLFWwindow* init(game_state *gamestate) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_SAMPLES, 4);
 
     GLFWwindow *window = glfwCreateWindow(SCREEN_SIZE_X, SCREEN_SIZE_Y, "Shape Test", nullptr, nullptr);
+    
     glfwSetCursorPosCallback(window, mouse_pos);
     glfwSetMouseButtonCallback(window, mouse_button_call);
+    glfwSetKeyCallback(window, keyboard);
 
     glfwMakeContextCurrent(window);
 
     glewExperimental = true;
     GLenum err = glewInit();
+    glEnable(GL_MULTISAMPLE);
     // std::cerr << glewGetErrorString(err) << std::endl;
     // std::cerr << GLEW_OK << std::endl;
 
@@ -59,6 +96,7 @@ GLFWwindow* init(game_state *gamestate) {
 
     GLuint prog = shamkprogram(vrt, frg);
     gamestate->current_program = prog;
+    gamestate->full_screen = 0;
     glUseProgram(prog);
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -145,14 +183,26 @@ int main(int argc, char ** argv) {
     double previous_time = current_time;
     double frame_time = 0;
 
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
     sh_circle testing(0, 0, 10, vec2(0, 1), vec4(1, 0, 0, 1));
+    double update_start = 0;
+    double update_end = 0;
+    FILE *file = nullptr;
+
+    fopen_s(&file, "log_time.txt", "w");
+    char outputs[] = "ut: %.50lf\n";
+    // char buffer[128];
+    size_t si = sizeof(outputs)/sizeof(outputs[0]) + 50;
+
     while(run) {
         current_time = glfwGetTime();
         frame_time = (current_time - previous_time);
+
         
-        if(frame_time > 0.25)
-            frame_time = 0.25;
+        //Note(sharo): I don't know what this is. maybe when the difference is
+        //too much don't go past 0.25?
+        // if(frame_time > 0.25)
+        //     frame_time = 0.25;
 
         total_time += frame_time;
         previous_time = current_time;
@@ -178,10 +228,20 @@ int main(int argc, char ** argv) {
                 glfwSetWindowShouldClose(window, true);
         }
 
+        if((glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)) {
+            toggle_fullscreen(&gamestate, window);
+        }
+
+        // update_start = glfwGetTime();
         while(( total_time >= dt )) {
-            gamestate.update(&gamestate, &mouse_st);
+            gamestate.update(&gamestate, &inputs_state, dt);
             total_time -= dt;       
         }
+        // update_end = glfwGetTime();
+
+        // sprintf(buffer, outputs,(update_end-update_start)*1000.0);
+        // // printf("%.50f\n", (update_end-update_start));
+        // fwrite(buffer, si, 1, file);
 
         const double time_left_alpha = total_time/dt;
         
@@ -191,6 +251,7 @@ int main(int argc, char ** argv) {
         glfwSwapBuffers(window);
         glfwPollEvents(); 
     }
+    fclose(file);
 
 
     glfwDestroyWindow(window);
