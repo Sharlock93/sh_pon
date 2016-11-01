@@ -20,7 +20,9 @@ enum object_type {
 struct game_object {
     object_type type;
     game_object *next_object;
+    game_object *previous_object;
     int size; 
+    int moved;
     void *obj;
 };
 
@@ -69,18 +71,16 @@ struct input_state {
     keyboard_state keyboard;
 };
 
-
 struct object_bucket {
     game_object *obj;
     int object_count;
 };
 
+
 struct grid_element {
     //Todo(sharo): should they know about their parent?
     // - their index inside the grid 
-    object_bucket *dynamic_objects;
-    object_bucket *static_objects;
-    object_bucket *controlled_objects;
+    dynamic_objects *dyn_objs;
 
     int index_grid;
     int index_row;
@@ -109,7 +109,6 @@ struct game_grid {
 
     float center_x;
     float center_y;
-    
     unsigned int _vbo;
     vec2 data[4];
 };
@@ -135,8 +134,10 @@ game_object* make_sh_line(vec2 a, vec2 b, vec4 color);
 game_object* make_sh_circle(float x, float y, float radius, float velocity, vec2 direction, vec4 color);
 game_object* make_sh_rect(float x, float y, float width, float height, vec4 color);
 int col_cric_rect(rect_object *rect_obj, ball_object *ball_obj, vec2 *result);
-
 void render_grid(game_grid *grid, int pos_attrib, int color_attrib);
+
+void move_dynamic_elem_to_grid(game_state *gamestate, game_object *obj,
+                              int from_index, int to_index);
 
 struct game_state {
     dynamic_objects objects_to_update;
