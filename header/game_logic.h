@@ -8,8 +8,8 @@
 #include <sh_rect.h>
 #endif
 
-// #define dt 0.01666666667
-#define dt 0.01
+#define dt 0.01666666667
+/* #define dt 0.0g */
 
 enum object_type {
     BALL,
@@ -115,7 +115,7 @@ struct game_grid {
 
 struct game_state;
 
-#define GAME_UPDATE_FUNC(name) void name(game_state *gamestate, input_state *inputs, double dts) 
+#define GAME_UPDATE_FUNC(name) void name(game_state *gamestate, input_state *inputs, double dts, bool without_move) 
 typedef GAME_UPDATE_FUNC(game_update_func);
 
 #define GAME_RENDER_FUNC(name) void name(game_state *gamestate, double alpha)
@@ -134,7 +134,7 @@ game_object* make_sh_line(vec2 a, vec2 b, vec4 color);
 game_object* make_sh_circle(float x, float y, float radius, float velocity, vec2 direction, vec4 color);
 game_object* make_sh_rect(float x, float y, float width, float height, vec4 color);
 int col_cric_rect(rect_object *rect_obj, ball_object *ball_obj, vec2 *result);
-void render_grid(game_grid *grid, int pos_attrib, int color_attrib);
+void render_grid(game_grid *grid, int pos_attrib, int transform_att, int color_attrib);
 
 void move_dynamic_elem_to_grid(game_state *gamestate, game_object *obj,
                               int from_index, int to_index);
@@ -150,6 +150,8 @@ struct game_state {
 
     game_object **named_objects;
     game_grid overlord;
+    GLFWwindow *window;
+    unsigned int current_vao;
     int object_count;
 
     int current_program;

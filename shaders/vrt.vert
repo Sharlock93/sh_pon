@@ -1,4 +1,4 @@
-#version 450
+#version 430
 
 in vec2 vpos;
 layout (location = 2) uniform mat4 size = mat4(1);

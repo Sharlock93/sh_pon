@@ -1,4 +1,4 @@
-#version 450
+#version 430
 
 out vec4 color;
 uniform vec4 input_color = vec4(1, 1, 1, 1);
