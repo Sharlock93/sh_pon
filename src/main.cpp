@@ -4,21 +4,18 @@
 #include <sharfunc.h>
 #include <GLFW\glfw3.h>
 #include <sh_circle.h>
-#include <game_logic.h>
+#include "game_logic.cpp"
 #include <sh_rect.h>
 #include <sh_line.h>
 #include <stdio.h>
 
-//Note(sharo): typedefs
-typedef float real32;
-typedef int64_t int64;
 
 //Note(Sharo): Globals
 #define SCREEN_SIZE_X 500 
 #define SCREEN_SIZE_Y 500 
 
+extern debug_record records[];
 input_state inputs_state = {};
-
 // const double time_change = 0.01;
 //
 static void toggle_fullscreen(game_state *gm, GLFWwindow *window) {
@@ -56,7 +53,6 @@ static void keyboard(GLFWwindow *window, int key, int scancode, int action, int 
         inputs_state.keyboard.arrow_right = 1;
     else if(key == GLFW_KEY_RIGHT && action == GLFW_RELEASE) 
         inputs_state.keyboard.arrow_right = 0;
-
 }
 
 static void mouse_button_call(GLFWwindow *window, int button, int action, int modes) {
@@ -106,9 +102,9 @@ GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
     gamestate->current_vao = vao;
     glBindVertexArray(vao);
 
-    glViewport(0, 0, SCREEN_SIZE_X, SCREEN_SIZE_Y);
-    glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(SCREEN_SIZE_X/2.0f + 0.5f, -SCREEN_SIZE_X/2.0f,
-                                               SCREEN_SIZE_Y/2.0f, -SCREEN_SIZE_Y/2.0f - 0.5f, -1.0f, 1.0f));
+    glViewport(0, 0, screen_width, screen_height);
+    glUniformMatrix4fv(2, 1, GL_TRUE, shaortho(screen_width/2.0f + 0.5f, -screen_width/2.0f,
+                                               screen_height/2.0f, -screen_height/2.0f - 0.5f, -1.0f, 1.0f));
     return window;
 }
 
@@ -129,6 +125,10 @@ GAME_RENDER_FUNC(game_render_stub) {
 
 
 GAME_INIT_FUNC(game_init_stub) {
+
+}
+
+GAME_DEBUG_FUNC(game_debug_stub) {
 
 }
 
@@ -191,6 +191,7 @@ void load_game_dll(game_state *gstate, char *source_name, char *temp_name) {
         gstate->update = (game_update_func *) GetProcAddress(gstate->lib, "update");
         gstate->render = (game_render_func *) GetProcAddress(gstate->lib, "render");
         gstate->init = (game_init_func *) GetProcAddress(gstate->lib, "init");
+        gstate->debug_func = (game_debug_func *) GetProcAddress(gstate->lib, "debug_func");
         gstate->is_init = 0;
     } else {
         gstate->update = game_update_stub;
@@ -204,9 +205,11 @@ void unload_game_dll(game_state *gstate) {
     gstate->update = game_update_stub;
     gstate->render = game_render_stub;
     gstate->init = game_init_stub;
+    gstate->debug_func = game_debug_stub;
 }
 
 void render_screen(game_state *gs, double alpha) {
+    //Todo(sharo): what exactly needs to be rebinded for proper context switch
     glfwMakeContextCurrent(gs->window);
     glUseProgram(gs->current_program);
     gs->render(gs, alpha);
@@ -214,86 +217,49 @@ void render_screen(game_state *gs, double alpha) {
 }
 
 
+
 int main(int argc, char ** argv) {
 
-    game_state gamestate = {};
-    game_state gamestate2 = {};
 
-    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 0, 0);
+    game_state gamestate = {};
+    // game_state gamestate2 = {};
+
+    gamestate.inputs = &inputs_state;
+    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 100, 100);
     load_program_attrib_location(&gamestate);
 
-    GLFWwindow *window2  = init(&gamestate2, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test Debug", 500, 0);
-    load_program_attrib_location(&gamestate2);
-
+    
 
     char *source_name = "game_logic.dll";
     char *temp_name =  "_temp.dll";
     char *source_name2 = "game_debug_screen.dll";
-
-
     load_game_dll(&gamestate,  source_name, temp_name);
-    /* load_game_dll(&gamestate2, source_name2, temp_name); */
-
+    // load_game_dll(&gamestate2, source_name2, temp_name);
+    // gamestate2.debug_state = &gamestate;
 
     bool run = true;
+    glfwSetTime(0);
+    glfwSwapInterval(0);
+    glfwMakeContextCurrent(gamestate.window);
+    glUseProgram(gamestate.current_program);
 
-
-    int max_frames_to_simulate = 2;
-    
-    
-    
- 
-    // glfwSetTime(0);
-    double total_time = 0;
     double current_time = glfwGetTime();
     double previous_time = current_time;
     double frame_time = 0;
-
-    // glfwSwapInterval(0);
-    sh_circle testing(0, 0, 10, vec2(0, 1), vec4(1, 0, 0, 1));
-    double update_start = 0;
-    double update_end = 0;
-    FILE *file = nullptr;
-
-    fopen_s(&file, "log_time.txt", "w");
-    char outputs[] = "ut: %.50lf\n";
-    // char buffer[128];
-    size_t si = sizeof(outputs)/sizeof(outputs[0]) + 50;
-
-    int current_state_key  = 0;
-    int previous_state_key = 0;
-
-    int current_state_key_n  = 0;
-    int previous_state_key_n = 0;
-
-    int frame_count = 0;
-
-    previous_state_key = current_state_key;
-    bool with_move = false;
-
-    int frames_to_simulate = 0;
-    int space_prev = 0;
-    int space_current = 0;
-    bool play_cont = false;
-
-    sh_circle sharo_(0, 0, 10, vec2(1, 1), vec4(1, 1, 1, 1), vec2(10, 10));
-
+    double total_time = 0;
 
     while(run) {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
+        previous_time = current_time; 
         current_time = glfwGetTime();
-        frame_time = (current_time - previous_time);
-        
-        previous_state_key = current_state_key;
-        previous_state_key_n = current_state_key_n;
-        space_prev = space_current;
 
+        frame_time = current_time - previous_time;
+        total_time += frame_time;
+        
         //Note(sharo): I don't know what this is. maybe when the difference is
         //too much don't go past 0.25?
         // if(frame_time > 0.25)
         //     frame_time = 0.25;
-
-        total_time += frame_time;
-        previous_time = current_time;
 
         FILETIME last_write_dll = get_last_write_time("game_logic.dll");
         if(CompareFileTime(&gamestate.last_write_time, &last_write_dll) != 0) {
@@ -306,125 +272,26 @@ int main(int argc, char ** argv) {
             gamestate.is_init = 1;
         }
 
-
-
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
-
-
+        //Todo(sharo): this is only window1 must be looped
         if((glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)) {
                 run  = false;
                 glfwSetWindowShouldClose(window, true);
         }
 
-        if((glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)) {
-            toggle_fullscreen(&gamestate, window);
-        }
-
-        if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {
-            current_state_key = 1;
-        } else {
-            current_state_key = 0;
-        }
-
-
-        if(glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
-            current_state_key_n = 1;
-        } else {
-            current_state_key_n = 0;
-        }
-
-
-        int m_pressed =  current_state_key == 1 && previous_state_key != 1;
-        if(!play_cont) {
-
-            if(m_pressed) {
-                std::cout << "Key was pressed" << std::endl;
-                std::cout << frame_count << std::endl;
-                total_time = 0.0166667;
-            } else {
-                total_time = 0;
-            } 
-        }
- 
-        if(!play_cont) {
-            if(!m_pressed) {
-                if(current_state_key_n == 1 && previous_state_key_n != 1) {
-                    std::cout << "Key was pressed" << std::endl;
-                    std::cout << frame_count << std::endl;
-
-                    total_time = 0.0166667;
-                    with_move = true;
-                } else {
-                    total_time = 0;
-                    with_move = 0;
-                }
-            }
-        }
-
-        if(glfwGetKey(window, GLFW_KEY_L) == GLFW_PRESS) {
-            std::cin >> frames_to_simulate;
-            total_time = frames_to_simulate*dt;
-            with_move = true;
-        }
-
-        if(glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-            space_current = 1;
-        } else {
-            space_current = 0;
-        }
-
-        int space_pressed = (space_prev == 0 && space_current == 1);
-        if(space_pressed) {
-            play_cont = play_cont ? false : true;
-            std::cout << play_cont << std::endl;
-            total_time = 0;
-        }
-
-        while(( total_time >= dt )) {
-            if(play_cont) {
-                gamestate.update(&gamestate, &inputs_state, dt, false);
-            } else {
-                if(with_move)
-                    gamestate.update(&gamestate, &inputs_state, dt, false);
-                else
-                    gamestate.update(&gamestate, &inputs_state, dt, true);
-                if(!frames_to_simulate)
-                    with_move = false;
-            }
+        //Todo(sharo): this needs to be added to a loop for all the screens
+        while(( total_time >= dt ) ) {
+            double passed_in = min(frame_time, dt);
+            gamestate.update(&gamestate, &inputs_state, frame_time, false);
 
             total_time -= dt;
-            frames_to_simulate -= 1;
-            frame_count++;
         }
-        
 
-        const double time_left_alpha = total_time/dt;
-
-        glfwMakeContextCurrent(window);
-        /* glUseProgram(gamestate.current_program); */
-        std::cout << "meow" << glGetError() << std::endl;
-        /* glBindVertexArray(gamestate.current_vao); */
-        std::cout << glGetError() << std::endl;
-        sharo_.render(gamestate.vpos_attrib_loc, gamestate.model_t_attrib_loc, gamestate.color_attrib_loc);
-        glfwSwapBuffers(window);
-
-        
-        
-        /* glfwMakeContextCurrent(window2); */
-        /* glUseProgram(gamestate2.current_program); */
-        /* glfwSwapBuffers(window2); */
-
-
-        /* glUseProgram(gamestate->); */
-
+        double time_left_alpha = total_time/dt;
+        render_screen(&gamestate, time_left_alpha);
         glfwPollEvents(); 
     }
-    fclose(file);
-
-
-    glfwDestroyWindow(window);
-
-    return 0;
     
+    glfwDestroyWindow(window);
+    return 0;
 }
 

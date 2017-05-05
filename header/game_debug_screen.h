@@ -1,10 +1,5 @@
-#include <shar.h>
-#include <sharfunc.h>
-#include <sh_circle.h>
-#include <sh_line.h>
+#include <grid_managment.h>
 
-#include <Windows.h>
-#ifndef SH_SHAPES
-#include <sh_rect.h>
-#endif
-
+extern "C" __declspec(dllexport) GAME_RENDER_FUNC(render);
+extern "C" __declspec(dllexport) GAME_UPDATE_FUNC(update);
+extern "C" __declspec (dllexport) GAME_INIT_FUNC(init);

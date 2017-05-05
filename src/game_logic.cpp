@@ -1,194 +1,138 @@
-#include "game_logic.h"
+/* @Todo(sharo): 
+ * - take physics steps using verlet or velocity verlet /Note(sharo): for later
+ * - make gui elements using immediate mode gui
+ * - select object and change their properties using debug menus
+ * - textures for objects
+ * - renovate the way objects are handled/i.e: make them into meshes or something
+ * - particle systems
+ * - be able to create and delete objects dynamically
+ * - rotation of objects
+ * - constrains on objects for physics simulation
+ * - mouse and keyboard event handling //almost done
+ * - concept of levels
+ * - serialization
+ * - debug services
+ */
+#include "../header/sh_types.h"
+
+#include "../src/grid_managment.cpp"
+#include "../src/game_math.cpp"
+#include "../src/game_debug.cpp"
+#include "../header/game_logic.h"
+
+#include <sharinit.cpp>
+
 #include <iostream>
-#define Assert(condtion) if(!(condtion)) {*(int *)0 = 0;}
 
-#define INDEX(row, col, stride) ((row*stride) + col)
+vec2 vmini(-250, -250);
+vec2 vmaxi(250, 250);
 
-void project_on_axis(sh_rect *rect, vec2 axis) {
-    
+void vmax(vec2 *a, vec2 *b) {
+    if(b->x > a->x)
+        a->x = b->x;
+
+    if(b->y > a->y)
+        a->y = b->y;
 }
 
-void add_force_vector(ball_object *ball, vec2 vector) {
+void vmin(vec2 *a, vec2 *b) {
+    if(b->x < a->x)
+        a->x = b->x;
+
+    if(b->y < a->y)
+        a->y = b->y;
 
 }
 
-float clamp(float value, float min, float max) {
-    if(value < min)
-        return min;
-
-    if(value > max)
-        return max;
-
-    return value;
+int gen_id() {
+    static int next_id = 0;
+    return next_id++;
 }
 
-void render_grid_elem(grid_element *grid_elem, int pos_attrib, int transform_att, int color_att) { 
-    glBindBuffer(GL_ARRAY_BUFFER, grid_elem->_vbo);  
-
-    glEnableVertexAttribArray(pos_attrib);
-    glVertexAttribPointer(pos_attrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    mat4 mat(1);
-    glUniformMatrix4fv(transform_att, 1, GL_TRUE, &mat[0][0]);
-    glUniform4fv(color_att, 1, &grid_elem->color[0]);
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
-
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void move_dynamic_elem_to_grid(game_state *gs, game_object *moved_obj, int from_index,
-                                                                       int to_index)
-{
-    dynamic_objects *from = gs->overlord.elements[from_index].dyn_objs;
-    dynamic_objects *to = gs->overlord.elements[to_index].dyn_objs;
-    game_object *dyn_obj_from = from->root_node;
-
-    //Note(sharo): cannot be null because we are moving an object from it
-    Assert(dyn_obj_from != NULL); 
-    if(dyn_obj_from == moved_obj) {
-        //Note(sharo): is the root node alone, then remove everything. 
-        if(dyn_obj_from->next_object == NULL) {
-            from->root_node = NULL;
-            /* from->last_node = NULL; */
-            from->object_counts--;
-            add_to_dynamic_obj(to, moved_obj);
-        } else {
-            //Note(sharo): root node is not alone, thus last node can only point
-            //to the last node and not the root node.
-            from->root_node = from->root_node->next_object;
-            from->root_node->previous_object = NULL;
-            from->object_counts--;
-            add_to_dynamic_obj(to, moved_obj);
-        }
-    } else {
-        moved_obj->previous_object->next_object = moved_obj->next_object;
+int collision(grid_element *elem, game_object *object) {
+    switch(object->type) {
+        case BALL: {
+            ball_object *ball = (ball_object *) object->obj;
+            return col_circ_rect(elem, ball);
+        } break;
         
-        if(moved_obj->next_object != nullptr) {
-            moved_obj->next_object->previous_object = moved_obj->previous_object;
+        case RECTANGLE: {
+            rect_object *rect = (rect_object *) object->obj;
+            return col_rect_rect(elem, rect);
+        } break;
+
+        case LINE: {
+            line_object *line = (line_object *) object->obj;
+            return col_rect_line_LB(elem, line);
+        } break;
+
+        default:
+            return 0;
+    }
+}
+
+
+void update_object_grid_relation(game_grid *grid, game_object *object) {
+    for(int i = 0; i < grid->elem_count; ++i) {
+        grid_element *elem = &grid->elements[i];
+        if(collision(elem, object)) {
+            object_bucket *bucket_to_remove = in_grid_element(elem, object);
+                if(bucket_to_remove) {
+                continue;
+            } else {
+                add_to_obj_bucket_list(elem->obj_buckets, object);
+            }
         } else {
-            from->last_node = nullptr;
+            object_bucket *bucket_to_remove = in_grid_element(elem, object);
+            if(bucket_to_remove) {
+                if( is_bucket_in_list(elem->obj_buckets, bucket_to_remove) ) {
+                    bucket_to_remove->to_delete = 1;
+                }
+            }
         }
-
-        from->object_counts--;
-        add_to_dynamic_obj(to, moved_obj);
     }
 }
 
-void add_to_dynamic_obj(dynamic_objects *dyn_obj, game_object *obj) {
+//void update(game_state *gamestate, input_state *inputs, double dts, bool without_move) {
+GAME_UPDATE_FUNC(update) {
+    // TIME_BLOCK;
+
+    //
+    if(sh_button(gamestate, 0, vec2(25, 25), "hello world", 40, 20)) {
+        std::cout << "it works" << std::endl;
+    }
     
-    obj->next_object = NULL;
-    obj->previous_object = NULL;
-    if(dyn_obj->root_node == NULL) {
-        dyn_obj->root_node = dyn_obj->last_node = obj;
-    } else { 
-        obj->previous_object = dyn_obj->last_node;
-        dyn_obj->last_node->next_object = obj;
-        dyn_obj->last_node = obj;
+    // rect_object *paddle = nullptr;
+    //
+    // if(gamestate->named_objects[PADDLE]) {
+    //     paddle = (rect_object *) gamestate->named_objects[PADDLE]->obj;
+    // }
+    //
+    // if(paddle) {
+    //
+    //     if(inputs->keyboard.arrow_left) {
+    //         paddle->previous_pos = paddle->rect->_position;
+    //         paddle->rect->move_position(-paddle->velocity*dt);
+    //     }
+    //
+    //     if(inputs->keyboard.arrow_right) {
+    //         paddle->previous_pos = paddle->rect->_position;
+    //         paddle->rect->move_position(paddle->velocity*dt);
+    //     }
+    // }
+
+    objects *dynamic_obj = gamestate->objects_to_update;
+    game_object *root_node = dynamic_obj->root_node;
+    for(int i = 0; i < dynamic_obj->object_count; ++i) {
+        switch(root_node->type) {
+            case BALL: {
+                ball_object *ball = (ball_object *) root_node->obj; 
+                ball->previous_pos = ball->circ->_position;
+                ball->circ->move_position(ball->velocity*dt); 
+            } break;
+        }
+        root_node = root_node->next_object;
     }
-
-    dyn_obj->object_counts++; 
-}
-
-int colision(sh_rect *rect, double x, double y) {
-    if((rect->_left <= x) &&
-       (rect->_right >= x) &&
-       (rect->_top >= y) &&
-       (rect->_bottom <= y) ) {
-        return 1;
-    } 
-
-    return 0;
-}
-
-int colision(grid_element *elem, double x, double y) {
-    if((elem->left <= x) &&
-       (elem->right >= x) &&
-       (elem->top >= y) &&
-       (elem->bottom <= y) ) {
-        return 1;
-    } 
-
-    return 0;
-}
-
-int colision(grid_element *elem, vec2 *p) {
-    if((elem->left <= p->x) &&
-       (elem->right >= p->x) &&
-       (elem->top >= p->y) &&
-       (elem->bottom <= p->y) ) {
-        return 1;
-    } 
-
-    return 0;
-}
-
-int col_cric_rect(rect_object *rect_obj, ball_object *ball_obj, vec2 *result) {
-    sh_rect   *rect   = rect_obj->rect;
-    sh_circle *circ   = ball_obj->circ;
-    
-    vec2 line = circ->_position - rect->_position;
-    vec2 final = vec2(0, 0);
-
-    final.x = clamp(line.x, -rect->_width/2.0,  rect->_width/2.0);
-    final.y = clamp(line.y, -rect->_height/2.0, rect->_height/2.0);
-    result->x = final.x;
-    result->y = final.y;
-    final =  final + rect->_position;
-    final = final - circ->_position;
-
-    return (final.x*final.x + final.y*final.y) < (circ->_r*circ->_r);
-}
-
-vec2 closes_point_in_rect(sh_circle *circ, sh_rect *rect) {
-    vec2 pos = circ->_position;
-    float x_left  = pos.x - rect->_left;
-    float x_right = rect->_right - pos.x; 
-    float y_top    = rect->_top - pos.y;
-    float y_bottom = pos.y - rect->_bottom;
-
-
-    float x_min = (x_left < x_right) ? x_left : x_right;
-    float y_min = (y_top < y_bottom) ? y_top : y_bottom;
-
-    if(x_min < y_min) {
-        if(x_min == x_left)
-            return vec2(rect->_left - circ->_r, pos.y);
-        else
-            return vec2(rect->_right + circ->_r, pos.y);
-    } else {
-        if(y_min == y_bottom)
-            return vec2(pos.x, rect->_bottom - circ->_r);
-        else
-            return vec2(pos.x, rect->_top + circ->_r);
-    }
-}
-
-int find_grid_index(game_grid *grid, vec2 position) {
-    float elem_width = grid->elements[0].width;
-    float elem_height = grid->elements[0].height;
-    float first_elem_left = grid->elements[0].left;
-    float first_elem_top = grid->elements[0].top;
-    int col = abs(int((first_elem_left - position.x )/elem_width ));
-    int row = abs(int((first_elem_top - position.y)/ elem_height));
-
-    return row*grid->width_elem_count + col;
-}
-
-extern "C" __declspec(dllexport) GAME_UPDATE_FUNC(update) {
-    //Todo(sharo): using mouse to move an object
-    /* if(inputs->mouse.left_button && inputs->mouse.hot_object) { */
-    /*     switch(inputs->mouse.hot_object->type) { */
-    /*         case BALL: { */
-    /*             ball_object *ball = (ball_object *) inputs->mouse.hot_object->obj; */
-    /*             ball->circ->set_position(inputs->mouse.mouse_x, inputs->mouse.mouse_y); */
-    /*         } break; */
-    /*         case RECTANGLE: { */
-
-    /*         } break; */
-    /*     } */
-    /* } else { */
-    /*     inputs->mouse.hot_object = nullptr; */
-    /* } */
 
     if(!without_move) {
         for(int i = 0; i < gamestate->overlord.elem_count;++i) {
@@ -197,154 +141,230 @@ extern "C" __declspec(dllexport) GAME_UPDATE_FUNC(update) {
             if(elem == nullptr)
                 continue;
 
-            game_object *d_o = elem->dyn_objs->root_node;
+            object_bucket *d_o = elem->obj_buckets->root_node;
+            while(d_o) {
+                Assert(d_o != nullptr);
+                if(d_o == nullptr)
+                    continue;
+                update_object_grid_relation(&gamestate->overlord, d_o->obj);
+                d_o = d_o->next;
+            }
+        }
+    }
 
-            for(; d_o ; d_o = d_o->next_object ) {
-                
-                switch(d_o->type) {
+    if(!without_move) {
+        for(int i = 0; i < gamestate->overlord.elem_count;++i) {
+            grid_element *elem = &gamestate->overlord.elements[i];
+            if(elem == nullptr) continue;
+
+            for( object_bucket *d_o = elem->obj_buckets->root_node;
+                d_o ;
+                d_o = d_o->next )
+            {
+                switch(d_o->obj->type) {
                     case BALL: {
-                                   ball_object *ball = (ball_object *) d_o->obj;
-                                   ball->circ->move_position(ball->velocity*dt);
-                               } break;
+                        ball_object *ball = (ball_object *) d_o->obj->obj;
+                        vec2 *p = &ball->circ->_position;
+
+                        mouse_state *m = &inputs->mouse;
+                        
+                        float w = 5;
+                        if(m->left_button) {
+                            if(p->x < ( m->mouse_x + w) &&
+                               p->x > (m->mouse_x - w) &&
+                               p->y < (m->mouse_y + w) &&
+                               p->y > (m->mouse_y - w) 
+                              )
+                            {
+                                m->hot_object = d_o->obj;
+                            }
+                        } else {
+                            inputs->mouse.hot_object = nullptr;
+                        }
+
+                        object_bucket *rest = d_o->next;
+                        while(rest) {
+                            col_circ(ball, rest->obj, gamestate);
+                            rest = rest->next;
+                        }
+                    } break;
+
+                    case LINE: {
+                        line_object *line = (line_object *)d_o->obj->obj;
+                        object_bucket *rest = d_o->next;
+                        while(rest) {
+                            col_line(line, rest->obj, gamestate);
+                            rest = rest->next;
+                        }
+                    } break;
+                    case RECTANGLE: {
+                        rect_object *rect = (rect_object *) d_o->obj->obj;
+                        object_bucket *rest = d_o->next;
+                        while(rest) {
+                            col_rect(rect, rest->obj, gamestate);
+                            rest = rest->next;
+                        }
+                    } break;
                 }
-
             }
         }
 
     }
-   
-    for(int i = 0; i < gamestate->overlord.elem_count;++i) {
-        grid_element *elem = &gamestate->overlord.elements[i];
-        
-        if(elem == nullptr)
-            continue;
 
-        game_object *d_o = elem->dyn_objs->root_node;
-        while(d_o) {
-            switch(d_o->type) {
-                case BALL: {
-                    ball_object *ball = (ball_object *) d_o->obj;
-                    int index_ball = find_grid_index(&gamestate->overlord, ball->circ->_position);
-                    if(i != index_ball) {
-                        move_dynamic_elem_to_grid(gamestate, d_o, i, index_ball);
-                    } 
-                } break;
+    //Removing elements
+    if(!without_move) {
+        for(int i = 0; i < gamestate->overlord.elem_count;++i) {
+            grid_element *elem = &gamestate->overlord.elements[i];
+            if(elem == nullptr)
+                continue;
+            object_bucket *d_o = elem->obj_buckets->root_node;
+            while(d_o) {
+                object_bucket *prev = d_o->prev;
+                object_bucket *next = d_o->next;
+
+                if(d_o->to_delete) {
+                    remove_from_grid_elem(elem->obj_buckets, &d_o);
+                    if(prev != nullptr) d_o = prev; 
+                    else  d_o = next;
+                } else {
+                    d_o = d_o->next;
+                }
             }
-            
-            d_o = d_o->next_object;
         }
+
     }
-
-
 
     for(int i = 0; i < gamestate->overlord.elem_count; ++i) {
         grid_element *elem = &gamestate->overlord.elements[i];
-        if(elem->dyn_objs->object_counts <= 0) {
+        if(elem->obj_buckets->object_count <= 0) {
             elem->color = vec4(1, 1, 1, 1);
-        } else if(elem->dyn_objs->object_counts > 5) {
+        } else if(elem->obj_buckets->object_count >= 5) {
             elem->color = vec4(1, 1, 0, 1);
         } else {
             elem->color = vec4(1, 0, 0, 1);
         }
     }
 
-}
-
-extern "C" __declspec(dllexport) GAME_RENDER_FUNC(render) { 
-    int vpos = gamestate->vpos_attrib_loc;
-    int color = gamestate->color_attrib_loc;
-    int model = gamestate->model_t_attrib_loc;
-
-
-    for (int i = 0; i < gamestate->overlord.elem_count; ++i) {
-        dynamic_objects *dynamic_obj = gamestate->overlord.elements[i].dyn_objs;
-        if(!dynamic_obj) continue;
-        game_object *root_node = dynamic_obj->root_node;
-        while(root_node) {
-            switch(root_node->type) {
-                case BALL: {
-                    ball_object *ball = (ball_object *) root_node->obj; 
-                    ball->circ->render(vpos, color, model);
-                } break;
-            }
-            root_node = root_node->next_object;
+    if(inputs->mouse.hot_object) {
+        game_object *hot = inputs->mouse.hot_object;
+        switch(hot->type) {
+            case BALL:
+                ball_object *ball = (ball_object *) hot->obj;
+                ball->previous_pos = ball->circ->_position;
+                ball->circ->set_position(inputs->mouse.mouse_x, inputs->mouse.mouse_y);
+                break;
         }
     }
 
+}
 
+GAME_RENDER_FUNC(render) {
+    int vpos = gamestate->vpos_attrib_loc;
+    int color = gamestate->color_attrib_loc;
+    int model = gamestate->model_t_attrib_loc;
+    input_state *inputs = gamestate->inputs;
+
+    if(inputs->mouse.left_button) {
+        gamestate->ui_state.active_object = 0;
+        gamestate->ui_state.hot_object = 0;
+
+    }
+
+    objects *dynamic_obj = gamestate->objects_to_update;
+    game_object *root_node = dynamic_obj->root_node;
+    for(int i = 0; i < dynamic_obj->object_count; ++i) {
+        switch(root_node->type) {
+            case BALL: {
+                ball_object *ball = (ball_object *) root_node->obj; 
+
+                vec2 old_pos = ball->circ->_position;
+                vec2 new_pos = ball->circ->_position*alpha + ball->previous_pos*(1.0 - alpha);
+                ball->circ->set_position(new_pos);
+
+                ball->circ->render(vpos, color, model);
+                ball->circ->set_position(old_pos);
+            } break;
+
+            case RECTANGLE: {
+                rect_object *rect = (rect_object *) root_node->obj;
+                rect->rect->render(vpos, color, model);
+            } break;
+            case LINE: {
+                line_object *line = (line_object *) root_node->obj;
+                line->line->render(vpos, color, model);
+            } break;
+
+        }
+        root_node = root_node->next_object;
+    }
+
+    // root_node = gamestate->static_objects->root_node;
+     root_node = gamestate->static_objects->root_node;
+    for(int i = 0; i < gamestate->static_objects->object_count; ++i) {
+        switch(root_node->type) {
+            case BALL: {
+                ball_object *ball = (ball_object *) root_node->obj; 
+                ball->circ->render(vpos, color, model);
+            } break;
+
+            case RECTANGLE: {
+                rect_object *rect = (rect_object *) root_node->obj;
+                rect->rect->render(vpos, color, model);
+            } break;
+            case LINE: {
+                line_object *line = (line_object *) root_node->obj;
+                line->line->render(vpos, color, model);
+            } break;
+        }
+        root_node = root_node->next_object;
+    }
+
+    if(sh_button(gamestate, __LINE__, vec2(0, 0) , "hello world", 20, 40)) {
+
+    }
+
+    for(int i = 0; i < gamestate->object_count; ++i) {
+        game_object *root_node = gamestate->named_objects[i];
+
+        switch(root_node->type) {
+            case BALL: {
+                ball_object *ball = (ball_object *) root_node->obj; 
+                ball->circ->render(vpos, color, model);
+           } break;
+
+            case RECTANGLE: {
+                rect_object *rect = (rect_object *) root_node->obj;
+                rect->rect->render(vpos, color, model);
+            } break;
+            case LINE: {
+                line_object *line = (line_object *) root_node->obj;
+                line->line->render(vpos, color, model);
+            } break;
+        }
+
+    }
+    
     for(int i = 0; i < gamestate->overlord.elem_count; ++i) {
         render_grid_elem(&gamestate->overlord.elements[i], vpos, model, color);
     }
-}
 
-game_object* make_sh_rect(float x, float y, float width, float height, vec4 color) {
-    game_object *obj = (game_object *) malloc(sizeof(game_object)); 
-    rect_object *rect = (rect_object *) malloc(sizeof(rect_object));
+    uint32 vbo;
+    glGenBuffers(1, &vbo);
+    draw_element draw = {};
+    
+    while(pop_element(&gamestate->renderstack, &draw)) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*draw.point_count, draw.points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+        glUniform4fv(color, 1, &draw.color[0]);
+        glDrawArrays(draw.command, 0, draw.point_count);
+        free(draw.points);
+    }
 
-    rect->rect = new sh_rect(x, y, width,height, color);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &vbo);
 
-    obj->type = RECTANGLE;
-    obj->next_object = nullptr;
-    obj->previous_object = nullptr;
-    obj->size = sizeof(rect_object);
-    obj->obj = rect;
-
-    return (obj);
-}
-
-game_object* make_sh_circle(float x, float y, float radius, float velocity,
-                            vec2 direction, vec4 color)
-{
-    game_object *obj = (game_object *) malloc(sizeof(game_object)); 
-    ball_object *ball_obj = (ball_object *) malloc(sizeof(ball_object));
-
-    ball_obj->circ = new sh_circle(x, y, radius, direction, color, vec2(x, y));
-    ball_obj->velocity = velocity;
-    ball_obj->vectors = (vec2 *) malloc(sizeof(vec2)); 
-    ball_obj->vectors->x = 0;
-    ball_obj->vectors->y = 0;
-    ball_obj->vec_capacity = 0;
-    ball_obj->vec_nums = 0;
-
-    obj->type = BALL;
-    obj->next_object = nullptr;
-    obj->previous_object = nullptr;
-    obj->moved = 0;
-    obj->size = sizeof(ball_object);
-    obj->obj = (void *) ball_obj;
-
-    return (obj);
-}
-
-game_object* make_sh_line(dynamic_objects *dyn, vec2 a, vec2 b, vec4 color) {
-    game_object *obj  = (game_object *) malloc(sizeof(game_object)); 
-    line_object *line = (line_object *) malloc(sizeof(line_object));
-    line->line = new sh_line(a, b, color);
-
-    obj->type = LINE;
-    obj->next_object = nullptr;
-    obj->previous_object = nullptr;
-    obj->size = sizeof(line_object);
-    obj->obj = line;
-
-    game_object *rect_a = make_sh_rect(a.x, a.y, 5, 5, vec4(1, 0, 0, 1));
-    game_object *rect_b = make_sh_rect(b.x, b.y, 5, 5, vec4(1, 0, 0, 1));
-
-    return (obj);
-}
-
-game_object* make_sh_line(vec2 a, vec2 b, vec4 color) {
-    game_object *obj  = (game_object *) malloc(sizeof(game_object)); 
-    line_object *line = (line_object *) malloc(sizeof(line_object));
-    line->line = new sh_line(a, b, color);
-
-    obj->type = LINE;
-    obj->next_object = nullptr;
-    obj->previous_object = nullptr;
-    obj->size = sizeof(line_object);
-    obj->obj = line;
-
-    return (obj);
+    
 }
 
 void free_objects_all(game_state *gs) {
@@ -356,122 +376,76 @@ void free_objects_all(game_state *gs) {
     gs->object_count = 0;
 }
 
-void render_grid(game_grid *grid, int pos_attrib, int color_att) {
-    glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);  
-    
-    glEnableVertexAttribArray(pos_attrib);
-    glVertexAttribPointer(pos_attrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    vec4 color(0, 1, 1, 1);
-    glUniform4fv(color_att, 1, &color[0]);
-    glDrawArrays(GL_LINE_LOOP, 0, 4);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void init_grid_elem(game_grid *grid, int index, vec4 color) {
-   int col = index%(grid->width_elem_count);
-   int row = index/grid->height_elem_count;
-
-   float height_elem = grid->grid_height/float(grid->height_elem_count); 
-   float width_elem = grid->grid_width/float(grid->width_elem_count);
-
-   //Note(sharo): this assumes the grid is like a mathematical 
-   //coordinate system and not a screen one.
-   
-   float top_left_x = -grid->grid_width/2.0;
-   float top_left_y =  grid->grid_height/2.0;
-    
-   grid->elements[index] = {};
-
-   //Note(sharo): assign memory to the buckets.
-   grid->elements[index].dyn_objs = (dynamic_objects *) calloc(1, sizeof(dynamic_objects));
+GAME_INIT_FUNC(init) {
 
 
-   grid->elements[index].index_grid   = index;
-   grid->elements[index].index_row    = row;
-   grid->elements[index].index_column = col;
-   grid->elements[index].width   = width_elem;
-   grid->elements[index].height  = height_elem;
-   grid->elements[index].data[0] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*row);
-   grid->elements[index].data[1] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*row);
-   grid->elements[index].data[2] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*(row+1));
-   grid->elements[index].data[3] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*(row+1));
-   
-   grid->elements[index].left   = grid->elements[index].data[0].x;
-   grid->elements[index].top    = grid->elements[index].data[0].y;
-   grid->elements[index].right  = grid->elements[index].data[2].x;
-   grid->elements[index].bottom = grid->elements[index].data[2].y;
+    int size = 0;
+    char *file = shareadfile("sh_font.fnt", &size);
 
-   grid->elements[index].color = color;
+    sh_fnt font = {};
+    sh_read_character_descripter_in_memory(&font, (uint8 *) file, size);
+    free(file);
 
-   glGenBuffers(1, &grid->elements[index]._vbo);
-   glBindBuffer(GL_ARRAY_BUFFER, grid->elements[index]._vbo);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*4, &grid->elements[index].data, GL_STATIC_DRAW);
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
+    file = shareadfile("sh_font_0.png", &size);
 
-}
+    sh_load_png_mem((uint8 *)file, size);
 
-void init_grid(game_grid *grid, float grid_height, float grid_width, int row, int col, vec2 pos) {
-    
-    grid->grid_width = grid_width;
-    grid->grid_height = grid_height;
 
-    grid->center_x = pos.x;
-    grid->center_y = pos.y;
-    grid->width_elem_count = col;
-    grid->height_elem_count = row;
-    grid->elem_count = row*col;
-
-    grid->elements = (grid_element *)malloc(sizeof(grid_element)*row*col);
-
-    grid->data[0] = vec2(pos.x - grid_width/2.0, pos.y + grid_height/2.0);
-    grid->data[1] = vec2(pos.x + grid_width/2.0, pos.y + grid_height/2.0);
-    grid->data[2] = vec2(pos.x + grid_width/2.0, pos.y - grid_height/2.0);
-    grid->data[3] = vec2(pos.x - grid_width/2.0, pos.y - grid_height/2.0);
-    
-    glGenBuffers(1, &grid->_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*4, &grid->data, GL_STATIC_DRAW); 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-void add_to_grid_dynamic_objects(game_grid *grid, game_object *object) {
-    switch (object->type) {
-        case BALL: {
-            ball_object *ball = (ball_object *)object->obj;
-            int index = find_grid_index(grid, ball->circ->_center);
-            add_to_dynamic_obj(grid->elements[index].dyn_objs, object);
-        } break;
-    }
-}
-
-extern "C" __declspec (dllexport) GAME_INIT_FUNC(init) {
-
-    if(gamestate->named_objects) {
+    glfwMakeContextCurrent(gamestate->window);
+    if (gamestate->named_objects) {
         free_objects_all(gamestate);
     }
 
-    init_grid(&gamestate->overlord, 500, 500, 5, 5 , vec2(0, 0));
+    gamestate->named_objects = (game_object **) malloc(sizeof(game_object *)*10);
+    gamestate->object_count = 0;
 
-    gamestate->named_objects = (game_object **) malloc(sizeof(game_object **)*10);
-    gamestate->named_objects[gamestate->object_count++] = make_sh_rect(0, -220, 10, 100, vec4(1, 1, 1, 1)) ;    
-    gamestate->named_objects[gamestate->object_count++] = make_sh_circle(40, 45, 10, 120, vec2(0, 1), vec4(0, 1, 1, 1));
-    gamestate->named_objects[gamestate->object_count++] = make_sh_line(vec2(0, 0), vec2(10, 20), vec4(0.5, 1.0, .4, 1));
-    gamestate->named_objects[gamestate->object_count++] = make_sh_line(vec2(0, 0), vec2(10, 20), vec4(0, 0.0, 1, 1));
+    gamestate->objects_to_update = (objects *) malloc(sizeof(objects));
+    gamestate->objects_to_update->root_node = NULL;
+    gamestate->objects_to_update->last_node = NULL;
+    gamestate->objects_to_update->object_count = 0;
 
+    gamestate->static_objects = (objects *) malloc(sizeof(objects));
+    gamestate->static_objects->root_node = NULL;
+    gamestate->static_objects->last_node = NULL;
+    gamestate->static_objects->object_count = 0;
+
+    gamestate->renderstack = {};
+    make_stack_capacity(&gamestate->renderstack, 10);
+
+    init_grid(&gamestate->overlord, 500, 500, 9, 9 , vec2(0, 0));
+
+    //
+    
     for(int i = 0; i < gamestate->overlord.width_elem_count*gamestate->overlord.height_elem_count; ++i) {
         init_grid_elem(&gamestate->overlord, i, vec4(1, 1, 1, 1));
     }
-    /* game_object *meow = make_sh_circle(0, 0, 10, 10, vec2(0, 1), vec4(1, 1, 1, 1)); */
-    /* int from_index = find_grid_index(&gamestate->overlord, vec2(0, 0)); */
-    /* add_to_grid_dynamic_objects(&gamestate->overlord,meow); */
-    /* move_dynamic_elem_to_grid(gamestate, meow, from_index, 11); */
-    
-    for(int i = 0; i < 360; ++i) {
-        add_to_grid_dynamic_objects(&gamestate->overlord,
-                                     make_sh_circle(cos((i*torad)), sin((i*torad)),
-                                                    5, 20,
-                                                    vec2(cos(i*torad), sin(i*torad)),
-                                                    vec4(1, 1, 1, 1)));
+
+    // add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250, -250), vec2(250, 250), vec4(1, 0, 0, 1)), true);
+    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-245, -250), vec2(-245,  250), vec4(1, 0, 0, 1)), true); //Left
+    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2( 245, -250), vec2( 245,  250), vec4(1, 0, 0, 1)), true); //right
+    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250,  245), vec2( 250,  245), vec4(1, 0, 0, 1)), true); //top
+    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250, -245), vec2( 250, -245), vec4(1, 0, 0, 1)), true); //bottom
+
+    // game_object *testing_object = make_sh_circle(gen_id(), 0, -230, 5, 300, vec2(0, 1), vec4(1, 0, 1, 1));
+    // ball_object *ball = (ball_object *) testing_object->obj;
+    // add_to_grid_objects(gamestate, testing_object , false); 
+
+
+    // for (int i = 0; i < 100; ++i) {
+    //     game_object *new_object = make_sh_circle(gen_id(), 20*cos(i), 20*sin(i), 5, 400, vec2(cos(i), sin(i)), vec4(1, sin(cos(i*torad)*cos(i*torad)), cos(i*torad), 1));
+    //     add_to_grid_objects(gamestate, new_object, false); 
+    // }
+
+    // gamestate->named_objects[PADDLE] =  make_sh_rect(gen_id(), 0, 0,  250, 15, 80, vec4(1, 1, 1, 1));
+    // add_to_grid_objects(gamestate, gamestate->named_objects[PADDLE], false); 
+}
+
+debug_record records[__COUNTER__ +1];
+GAME_DEBUG_FUNC(debug_func) {
+    for(int i = 0; i < ArrayCount(records); ++i) {
+        debug_record *record = records+i;
+        // if(record->func_name != NULL)
+        //     std::cout << record->func_name << " " << record->time << std::endl;
     }
 }
