@@ -11,6 +11,7 @@
 #endif
 
 #include "../header/game_debug.h"
+#include "../header/sh_fnt_reader.h"
 
 #define HELLO
 #undef SH_API
@@ -235,6 +236,7 @@ struct game_state {
     game_debug_func  *debug_func;
     sh_ui_state      ui_state;
     draw_stack       renderstack;
+    sh_fnt           font;
 
     input_state      *inputs;
     game_state       *debug_state; //Note(sharo): a gamestate would debug this state

@@ -15,10 +15,12 @@
  */
 #include "../header/sh_types.h"
 
-#include "../src/grid_managment.cpp"
-#include "../src/game_math.cpp"
-#include "../src/game_debug.cpp"
+#include "grid_managment.cpp"
+#include "game_math.cpp"
+#include "game_debug.cpp"
 #include "../header/game_logic.h"
+#include "sh_fnt_reader.cpp"
+#include "sh_png_reader.cpp"
 
 #include <sharinit.cpp>
 
@@ -383,14 +385,16 @@ GAME_INIT_FUNC(init) {
     int size = 0;
     char *file = shareadfile("sh_font.fnt", &size);
 
-    sh_fnt font = {};
-    sh_read_character_descripter_in_memory(&font, (uint8 *) file, size);
+    sh_read_character_descripter_in_memory(&gamestate->font, (uint8 *) file, size);
     free(file);
-
+    
     file = shareadfile("sh_font_0.png", &size);
+    
+    int32 x = 0;
+    int32 y = 0;
+    uint8 *image = sh_load_png_mem((uint8 *)file, size, &x, &y);
 
-    sh_load_png_mem((uint8 *)file, size);
-
+    free(file);
 
     glfwMakeContextCurrent(gamestate->window);
     if (gamestate->named_objects) {
