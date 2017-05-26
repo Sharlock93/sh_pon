@@ -1,4 +1,5 @@
 #include "../header/game_debug.h"
+// #include <stdio.h>
 
 void sh_memcpy(uint8 *dest_mem, uint8 *source, uint32 bytes_to_cpy) {
     while(bytes_to_cpy--) {
@@ -106,12 +107,22 @@ void render_rect(vec2 pos, float width, float height, vec4 color, int vpos_attri
 }
 
 
-int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, float width, float height)
-{
+int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 color) {
+    int32 text_length = sh_strlen((uint8 *)text)-1;
+    float width = 0;
+    float height = 20;
+
+    float scale = sh_get_scale_for_pixel(&gs->font, 20);
+
+    for(int32 i = 0; i < text_length; ++i) {
+        fnt_char *ch = gs->font.characters + text[i];
+        width += ch->xadvance*scale;
+    }
+
     input_state *inputs = gs->inputs;
     sh_ui_state *state = &gs->ui_state;
     vec2 mouse = vec2(inputs->mouse.mouse_x, inputs->mouse.mouse_y);
-    draw_element rect = sh_draw_rect(position, width, height, vec4(1, 1, 1, 1));
+    draw_element rect = sh_draw_rect_fill(position, width + 10, height + 10, color);
 
     int clicked = 0;
 
@@ -132,7 +143,7 @@ int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, float 
         }
     }
 
-    push_draw_text(text, 12, position);
+    push_draw_text(gs, text, height, vec2(position.x - width/2.0, position.y - height/2.0), vec4(0, 0, 0, 1));
     push_draw_element(&gs->renderstack, rect);
 
     return clicked;
@@ -168,4 +179,37 @@ int sh_button_circ(game_state *gs, unsigned int id, vec2 position, char *text, f
     return clicked;
 }
 
+
+char* sh_inttstr(int32 val) {
+    static char buffer[12] = {};
+
+    char *result = buffer + 11;
+    do {
+        result--;
+        int8 curr_dig = val%10;
+        *result = '0' + curr_dig; 
+        val /= 10;
+    } while(val);
+
+    return result;
+}
+
+char* sh_flttstr(float val) {
+    //Todo(sharo): implement this
+    static char buffer[12] = {};
+    // int32 significant = *(int32 *) &val & (( 1 << 23 ) - 1);
+    // int32 exponent = ( *(int32 *) &val & ( (1 << 31) - 1 ) ) >> 23;
+    // int32 sign = *(int32 *) &val >> 30;
+    //
+    // exponent -= 127;
+    sprintf_s(buffer, 12, "%.3f", val);
+    
+    return buffer;
+}
+
+char* sh_vec2tstr(vec2 *vec) {
+    static char buffer[24] = {};
+    sprintf_s(buffer, 24, "vec2(%.3f, %.3f)", vec->x, vec->y);
+    return buffer;
+}
 

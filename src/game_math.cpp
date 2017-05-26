@@ -54,9 +54,6 @@ int point_in_circ(vec2 *p, sh_circ_container *c) {
     return (d2.x*d2.x + d2.y*d2.y) < c->r*c->r;
 }
 
-
-
-
 vec2 closes_point_in_rect(sh_circle *circ, sh_rect *rect) {
     vec2 pos = circ->_position;
     float x_left  = pos.x - rect->_left;

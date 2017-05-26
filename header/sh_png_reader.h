@@ -127,3 +127,4 @@ uint8* sh_decompress_png_deflate(sh_zlib_block *zip);
 
 uint8* sh_defilter_png(uint8 *decompressed_png, sh_png_ihdr *ihdr);
 void sh_load_png_mem(uint8 *mem, uint32 mem_size);
+uint8* sh_convert_one_to_four_chnl(uint8 *img, uint32 byte_size, uint32 x, uint32 y);

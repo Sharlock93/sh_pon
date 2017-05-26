@@ -404,7 +404,7 @@ uint8* sh_load_png_mem(uint8 *mem, uint32 mem_size, int32 *x, int32 *y) {
     sh_png_ihdr ihdr = {};
     uint8 *image = nullptr;
 
-    for(;;) { 
+    for(int32 i = 0; i < chunk_nums; ++i) { 
         chunks[i] = sh_png_read_chunk(memory);
         
         if(sh_streq((char *)&chunks[i].head , "IHDR", 4)) {
@@ -422,7 +422,7 @@ uint8* sh_load_png_mem(uint8 *mem, uint32 mem_size, int32 *x, int32 *y) {
         }
 
         SKIP_BYTES(memory, chunks[i].len + 4 + 4 + 4);
-        i++;
+        // i++;
     }
 
     while(--chunk_nums >= 0) {
@@ -435,5 +435,22 @@ uint8* sh_load_png_mem(uint8 *mem, uint32 mem_size, int32 *x, int32 *y) {
     *y = ihdr.y;
 
     return image;
+}
 
+uint8* sh_convert_one_to_four_chnl(uint8 *mem, uint32 bytes, uint32 x, uint32 y) {
+    uint8 *four_channel = (uint8 *) malloc(x*y*4);
+    uint32 *work = (uint32 *)four_channel;
+
+    for(uint32 i = 0; i < y; ++i) {
+        uint8 *row = mem + i*x;
+
+        for(uint32 j = 0; j < x; ++j) {
+            uint8 value = row[j];
+            work[j] = (value << 24) | (value << 16) | (value << 8) | value;
+        }
+
+        work += x;
+    }
+
+    return four_channel;
 }

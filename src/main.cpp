@@ -87,6 +87,8 @@ GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
     glewExperimental = true;
     GLenum err = glewInit();
     glEnable(GL_MULTISAMPLE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     GLuint vrt = shamkshader(GL_VERTEX_SHADER, "../shaders/vrt.vert");
     GLuint frg = shamkshader(GL_FRAGMENT_SHADER, "../shaders/fgt.frag");
@@ -110,9 +112,11 @@ GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
 
 void load_program_attrib_location(game_state *gamestate) {
     gamestate->vpos_attrib_loc = glGetAttribLocation(gamestate->current_program, "vpos");
+    gamestate->tex_coord = glGetAttribLocation(gamestate->current_program, "sh_tex_coord");
 
     gamestate->color_attrib_loc = glGetUniformLocation(gamestate->current_program, "input_color");
     gamestate->model_t_attrib_loc = glGetUniformLocation(gamestate->current_program, "transform");
+    gamestate->has_texture_attrib = glGetUniformLocation(gamestate->current_program, "has_texture");
 }
 
 GAME_UPDATE_FUNC(game_update_stub) {
@@ -248,6 +252,10 @@ int main(int argc, char ** argv) {
     double frame_time = 0;
     double total_time = 0;
 
+    int n_key_state = 0;
+    int m_key_state = 0;
+    int frame_to_sim = 0;
+
     while(run) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
         previous_time = current_time; 
@@ -274,24 +282,40 @@ int main(int argc, char ** argv) {
 
         //Todo(sharo): this is only window1 must be looped
         if((glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)) {
-                run  = false;
-                glfwSetWindowShouldClose(window, true);
+            run  = false;
+            glfwSetWindowShouldClose(window, true);
         }
+
+        int n_key_curr = (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS);
+        int m_key_curr = (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS);
+
+        if(n_key_curr && !n_key_state) {
+            frame_to_sim++;
+        }
+
+        if(m_key_curr && !m_key_state) {
+            frame_to_sim = 20;
+        }
+
+
+        n_key_state = n_key_curr;
+        m_key_state = m_key_curr;
 
         //Todo(sharo): this needs to be added to a loop for all the screens
         while(( total_time >= dt ) ) {
             double passed_in = min(frame_time, dt);
-            gamestate.update(&gamestate, &inputs_state, frame_time, false);
-
-            total_time -= dt;
+            gamestate.update(&gamestate, &inputs_state, passed_in, false);
+            total_time -= dt; 
         }
 
         double time_left_alpha = total_time/dt;
         render_screen(&gamestate, time_left_alpha);
+        gamestate.debug_func(&gamestate);
+
         glfwPollEvents(); 
     }
     
-    glfwDestroyWindow(window);
+    // glfwDestroyWindow(window);
     return 0;
 }
 

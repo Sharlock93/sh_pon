@@ -192,6 +192,7 @@ struct draw_element {
     vec4  color;
     int   point_count;
     int   command; //OpenGL command
+    int   has_texture;
 };
 
 struct draw_stack {
@@ -220,6 +221,8 @@ struct game_state {
     int vpos_attrib_loc;
     int color_attrib_loc;
     int model_t_attrib_loc;
+    int tex_coord;
+    int has_texture_attrib;
     int is_init;
     int full_screen;
 
@@ -237,6 +240,7 @@ struct game_state {
     sh_ui_state      ui_state;
     draw_stack       renderstack;
     sh_fnt           font;
+    uint32           fnt_tex;
 
     input_state      *inputs;
     game_state       *debug_state; //Note(sharo): a gamestate would debug this state

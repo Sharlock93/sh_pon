@@ -2,7 +2,7 @@
 #include <iostream>
 
 void init_grid(game_grid *grid, float grid_width, float grid_height, int row, int col, vec2 pos) {
-    
+
     grid->grid_width = grid_width;
     grid->grid_height = grid_height;
 
@@ -18,7 +18,7 @@ void init_grid(game_grid *grid, float grid_width, float grid_height, int row, in
     grid->data[1] = vec2(pos.x + grid_width/2.0, pos.y + grid_height/2.0);
     grid->data[2] = vec2(pos.x + grid_width/2.0, pos.y - grid_height/2.0);
     grid->data[3] = vec2(pos.x - grid_width/2.0, pos.y - grid_height/2.0);
-    
+
     glGenBuffers(1, &grid->_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*4, &grid->data, GL_STATIC_DRAW); 
@@ -26,45 +26,45 @@ void init_grid(game_grid *grid, float grid_width, float grid_height, int row, in
 }
 
 void init_grid_elem(game_grid *grid, int index, vec4 color) {
-   int col = index%(grid->width_elem_count);
-   int row = index/grid->height_elem_count;
+    int col = index%(grid->width_elem_count);
+    int row = index/grid->height_elem_count;
 
-   float height_elem = grid->grid_height/float(grid->height_elem_count);
-   float width_elem = grid->grid_width/float(grid->width_elem_count);
+    float height_elem = grid->grid_height/float(grid->height_elem_count);
+    float width_elem = grid->grid_width/float(grid->width_elem_count);
 
-   //Note(sharo): this assumes the grid is like a mathematical 
-   //coordinate system and not a screen one.
-   
-   float top_left_x = -grid->grid_width/2.0;
-   float top_left_y =  grid->grid_height/2.0;
-    
-   grid->elements[index] = {};
+    //Note(sharo): this assumes the grid is like a mathematical 
+    //coordinate system and not a screen one.
 
-   //Note(sharo): assign memory to the buckets.
-   grid->elements[index].obj_buckets = (object_bucket_list *) calloc(1, sizeof(object_bucket_list));
+    float top_left_x = -grid->grid_width/2.0;
+    float top_left_y =  grid->grid_height/2.0;
+
+    grid->elements[index] = {};
+
+    //Note(sharo): assign memory to the buckets.
+    grid->elements[index].obj_buckets = (object_bucket_list *) calloc(1, sizeof(object_bucket_list));
 
 
-   grid->elements[index].index_grid   = index;
-   grid->elements[index].index_row    = row;
-   grid->elements[index].index_column = col;
-   grid->elements[index].width   = width_elem;
-   grid->elements[index].height  = height_elem;
-   grid->elements[index].data[0] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*row);
-   grid->elements[index].data[1] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*row);
-   grid->elements[index].data[2] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*(row+1));
-   grid->elements[index].data[3] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*(row+1));
-   
-   grid->elements[index].left   = grid->elements[index].data[0].x;
-   grid->elements[index].top    = grid->elements[index].data[0].y;
-   grid->elements[index].right  = grid->elements[index].data[2].x;
-   grid->elements[index].bottom = grid->elements[index].data[2].y;
+    grid->elements[index].index_grid   = index;
+    grid->elements[index].index_row    = row;
+    grid->elements[index].index_column = col;
+    grid->elements[index].width   = width_elem;
+    grid->elements[index].height  = height_elem;
+    grid->elements[index].data[0] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*row);
+    grid->elements[index].data[1] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*row);
+    grid->elements[index].data[2] = vec2(top_left_x+width_elem*(col+1), top_left_y-height_elem*(row+1));
+    grid->elements[index].data[3] = vec2(top_left_x+width_elem*col, top_left_y-height_elem*(row+1));
 
-   grid->elements[index].color = color;
+    grid->elements[index].left   = grid->elements[index].data[0].x;
+    grid->elements[index].top    = grid->elements[index].data[0].y;
+    grid->elements[index].right  = grid->elements[index].data[2].x;
+    grid->elements[index].bottom = grid->elements[index].data[2].y;
 
-   glGenBuffers(1, &grid->elements[index]._vbo);
-   glBindBuffer(GL_ARRAY_BUFFER, grid->elements[index]._vbo);
-   glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*4, &grid->elements[index].data, GL_STATIC_DRAW);
-   glBindBuffer(GL_ARRAY_BUFFER, 0);
+    grid->elements[index].color = color;
+
+    glGenBuffers(1, &grid->elements[index]._vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, grid->elements[index]._vbo);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*4, &grid->elements[index].data, GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 }
 
@@ -94,7 +94,7 @@ void remove_from_grid_elem(object_bucket_list *list, object_bucket **bucket_ptr)
 
 
     object_bucket *bucket = *bucket_ptr;
-    
+
 
     if(list->root_node == bucket) {
 
@@ -115,7 +115,7 @@ void remove_from_grid_elem(object_bucket_list *list, object_bucket **bucket_ptr)
             bucket->next->prev = bucket->prev;
         }
     }
-    
+
     bucket->next = nullptr;
     bucket->prev = nullptr;
 
@@ -143,22 +143,22 @@ void add_to_grid_objects(game_state *gs, game_object *gobj, int static_obj) {
     game_grid *grid = &gs->overlord;
     switch (gobj->type) {
         case BALL: {
-            ball_object *ball = (ball_object *)gobj->obj;
-            int index = find_grid_index(grid, ball->circ->_position);
-            add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
-        } break;
+                       ball_object *ball = (ball_object *)gobj->obj;
+                       int index = find_grid_index(grid, ball->circ->_position);
+                       add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
+                   } break;
 
         case RECTANGLE: {
-            rect_object *rect = (rect_object *) gobj->obj;
-            int index = find_grid_index(grid, rect->rect->_position);
-            add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
-        } break;
+                            rect_object *rect = (rect_object *) gobj->obj;
+                            int index = find_grid_index(grid, rect->rect->_position);
+                            add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
+                        } break;
         case LINE: {
-            line_object *line = (line_object *) gobj->obj;
-            vec2 center = (line->line->point[1] + line->line->point[0])/2.0;
-            int index = find_grid_index(grid, center);
-            add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
-        } break;
+                       line_object *line = (line_object *) gobj->obj;
+                       vec2 center = (line->line->point[1] + line->line->point[0])/2.0;
+                       int index = find_grid_index(grid, center);
+                       add_to_obj_bucket_list(grid->elements[index].obj_buckets, gobj);
+                   } break;
     }
 
 
@@ -182,7 +182,7 @@ int find_grid_index(game_grid *grid, vec2 position) {
 
 void render_grid(game_grid *grid, int pos_attrib, int color_att) {
     glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);  
-    
+
     glEnableVertexAttribArray(pos_attrib);
     glVertexAttribPointer(pos_attrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
     vec4 color(0, 1, 1, 1);
@@ -205,9 +205,9 @@ void render_grid_elem(grid_element *grid_elem, int pos_attrib, int transform_att
 }
 
 void move_bucket_elem_to_grid(game_state *gs,
-                               object_bucket *mvd_obj_bucket,
-                               int from_index,
-                               int to_index)
+        object_bucket *mvd_obj_bucket,
+        int from_index,
+        int to_index)
 {
 
     object_bucket_list *from = gs->overlord.elements[from_index].obj_buckets;
@@ -319,14 +319,14 @@ game_object* make_sh_rect(int id, float x, float y, float velocity, float width,
 }
 
 game_object* make_sh_circle(int id, float x, float y, float radius,
-                              float velocity, vec2 direction, vec4 color)
+        float velocity, vec2 direction, vec4 color)
 {
     game_object *obj = (game_object *) malloc(sizeof(game_object)); 
     ball_object *ball_obj = (ball_object *) malloc(sizeof(ball_object));
 
     ball_obj->circ = new sh_circle(x, y, radius, direction, color, vec2(x, y));
     ball_obj->velocity = velocity;
-    
+
     ball_obj->vectors = (vec2 *) malloc(sizeof(vec2)); 
     ball_obj->vec_capacity = 1;
     ball_obj->vec_nums = 1;
@@ -348,7 +348,7 @@ game_object* make_sh_circle(int id, float x, float y, float radius,
 draw_element sh_draw_rect(vec2 pos, float width, float height, vec4 color) {
     draw_element elem = {};
     elem.points = (vec2 *) malloc(sizeof(vec2) * 4);
-    
+
     elem.points[0]  = vec2(pos.x - width/2.0, pos.y + height/2.0);
     elem.points[1]  = vec2(pos.x + width/2.0, pos.y + height/2.0);
     elem.points[2]  = vec2(pos.x + width/2.0, pos.y - height/2.0);
@@ -360,6 +360,27 @@ draw_element sh_draw_rect(vec2 pos, float width, float height, vec4 color) {
 
     return (elem);
 }
+
+
+draw_element sh_draw_rect_fill(vec2 pos, float width, float height, vec4 color) {
+    draw_element elem = {};
+    elem.points = (vec2 *) malloc(sizeof(vec2) * 6);
+
+    elem.points[0]  = vec2(pos.x - width/2.0, pos.y - height/2.0);
+    elem.points[1]  = vec2(pos.x - width/2.0, pos.y + height/2.0);
+    elem.points[2]  = vec2(pos.x + width/2.0, pos.y + height/2.0);
+
+    elem.points[3]  = vec2(pos.x - width/2.0, pos.y - height/2.0);
+    elem.points[4]  = vec2(pos.x + width/2.0, pos.y + height/2.0);
+    elem.points[5]  = vec2(pos.x + width/2.0, pos.y - height/2.0);
+
+    elem.point_count = 6;
+    elem.command = GL_TRIANGLES;
+    elem.color = color;
+
+    return (elem);
+}
+
 
 draw_element sh_draw_circ(vec2 pos, float r, vec4 color) {
 
@@ -382,7 +403,7 @@ draw_element sh_draw_circ(vec2 pos, float r, vec4 color) {
 }
 
 void push_draw_element(draw_stack *stack, draw_element elem) {
-    
+
     if(elem.point_count == 0) return;
 
     if(stack->elem_count >= stack->capacity) {
@@ -392,12 +413,87 @@ void push_draw_element(draw_stack *stack, draw_element elem) {
     stack->elements[stack->elem_count++] = elem;
 }
 
-void push_draw_text(char *text, int font_size, vec2 position) {
-    
+draw_element draw_single_char(sh_fnt *fnt, char c,  int font_size, vec2 pos) {
+    draw_element elem = {};
+    elem.point_count = 4;
+    elem.points = (vec2 *) malloc(sizeof(vec2)*8);
+    elem.has_texture = 1;
+    elem.command = GL_TRIANGLE_FAN;
+    elem.color = vec4(1, 1, 1, 1);
+    fnt_char *ch = fnt->characters + c;
+    float w = ch->width;
+    float h = ch->height;
+
+    float fh = fnt->common.scaleH;
+    float fw = fnt->common.scaleW;
+
+
+    elem.points[0] = vec2(pos.x, pos.y);
+    elem.points[1] = vec2(pos.x, pos.y + h );
+    elem.points[2] = vec2(pos.x + w, pos.y + h );
+    elem.points[3] = vec2(pos.x + w, pos.y);
+
+    elem.points[4] = vec2((ch->x )/fw, (ch->y + h)/fh);
+    elem.points[5] = vec2(ch->x/fw, ch->y/fh);
+    elem.points[6] = vec2((ch->x + w)/fw, (ch->y)/fh);
+    elem.points[7] = vec2((ch->x + w)/fw, (ch->y + h)/fh);
+    return elem;
+}
+
+void draw_char_into_buffer(vec2 *quad_buff, vec2 *tex_buff, sh_fnt *fnt, char c, int font_size, vec2 pos) {
+    fnt_char *ch = fnt->characters + c;
+    float scale = sh_get_scale_for_pixel(fnt, font_size);
+    float h = ch->height*scale;
+    float w = ch->width*scale;;
+    float fh = fnt->common.scaleH;
+    float fw = fnt->common.scaleW;
+    pos.x += ch->xoffset*scale;
+    quad_buff[0] = vec2(pos.x, pos.y);
+    quad_buff[1] = vec2(pos.x, pos.y + h);
+    quad_buff[2] = vec2(pos.x + w, pos.y + h);
+
+    quad_buff[3] = vec2(pos.x, pos.y);
+    quad_buff[4] = vec2(pos.x + w, pos.y + h);
+    quad_buff[5] = vec2(pos.x + w, pos.y);
+
+    tex_buff[0] = vec2((ch->x )/fw, (ch->y + ch->height)/fh);
+    tex_buff[1] = vec2(ch->x/fw, ch->y/fh);
+    tex_buff[2] = vec2((ch->x + ch->width)/fw, (ch->y)/fh);
+
+    tex_buff[3] = vec2((ch->x )/fw, (ch->y + ch->height)/fh);
+    tex_buff[4] = vec2((ch->x + ch->width)/fw, (ch->y)/fh);
+    tex_buff[5] = vec2((ch->x + ch->width)/fw, (ch->y + ch->height)/fh);
+}
+
+draw_element sh_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color) {
+    TIME_BLOCK;
+    int32 length = sh_strlen((uint8 *)text) - 1;
+    draw_element elem = {};
+    vec2 *points = (vec2 *)malloc(sizeof(vec2)*12*(length));
+    elem.points = points;
+    elem.has_texture = 1;
+    elem.color = color;
+
+    elem.point_count = 6*(length);
+    elem.command = GL_TRIANGLES;
+    vec2 cursor_pos = position;
+    float scale = sh_get_scale_for_pixel(fnt, font_size);
+    for(int32 i = 0; i < length; ++i) {
+        fnt_char *ch = fnt->characters + text[i];
+        draw_char_into_buffer(points + i*6, points + length*6 + i*6, fnt, text[i], font_size, cursor_pos);
+        cursor_pos.x += ch->xadvance*scale;
+    }
+
+    return elem;
+}
+
+
+void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color) {
+    push_draw_element(&gs->renderstack, sh_draw_text(&gs->font, text, font_size, position, color));
 }
 
 void make_stack_capacity(draw_stack *stack, int new_capacity) {
-    
+
     if(stack->capacity == 0) {
         stack->elements = (draw_element *) malloc(sizeof(draw_element)*new_capacity);
 

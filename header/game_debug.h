@@ -60,10 +60,14 @@ int32 sh_parse_int(uint8 *mem, uint8 str_len);
 vec4 sh_parse_vec4(uint8 *start, uint32 len);//format: x, y, z, w
 vec2 sh_parse_vec2(uint8 *start, uint32 len);//format: x, y
 int32 sh_abs(int32 number);
+char* sh_inttstr(int32 val);
+char* sh_flttstr(float val);
+char* sh_vec2tstr(vec2 *vec);
 
+struct game_state;
 
 void render_rect(vec2 pos, float width, float height, vec4 color, int vpos_attrib, int color_attrib);
-// int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, float width, float height);
+int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 color);
 // int sh_button_circ(game_state *gs, unsigned int id, vec2 position, char *text, float r);
 
 #endif

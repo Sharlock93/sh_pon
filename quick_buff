@@ -1,0 +1,4 @@
+game_state
+ -> elements
+    -> object_bucket_list
+        -> object_bucket

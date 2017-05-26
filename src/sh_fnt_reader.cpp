@@ -1,5 +1,10 @@
 #include "../header/sh_fnt_reader.h"
 
+
+float sh_get_scale_for_pixel(sh_fnt *font, int font_size) {
+    return (float)font_size/-font->info.size; 
+}
+
 uint8* get_line_end(uint8 *current_pos, uint32 mem_size) {
     while(*current_pos != '\n' && *current_pos != '\r' && ( mem_size--  >= 0)) current_pos++;
     return current_pos;
@@ -80,6 +85,13 @@ sh_token get_next_token(uint8 *pos, uint8 seperator) {
     token.type = get_token_type(&token);
 
     return token;
+}
+
+
+int32 sh_strlen(uint8 *string) {
+    uint8 *start = string;
+    while(*string++ != '\0');
+    return (int32) ( string - start );
 }
 
 void fill_fnt_info(uint8 *start_mem, fnt_info *fntinf) {
@@ -285,4 +297,6 @@ void sh_read_character_descripter_in_memory(sh_fnt *font, uint8 *memory, uint32 
         fill_fnt_char(token.t_end, font->characters);
     }
 }
+
+
 

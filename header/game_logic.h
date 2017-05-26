@@ -8,7 +8,8 @@ typedef int64_t int64;
 typedef uint32_t uint32;
 
 enum {
-    PADDLE
+    PADDLE,
+    MAIN_BALL
 };
 
 #define ArrayCount(array) (sizeof(array))/((sizeof(array[0])))

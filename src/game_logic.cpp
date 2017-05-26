@@ -14,7 +14,6 @@
  * - debug services
  */
 #include "../header/sh_types.h"
-
 #include "grid_managment.cpp"
 #include "game_math.cpp"
 #include "game_debug.cpp"
@@ -23,8 +22,10 @@
 #include "sh_png_reader.cpp"
 
 #include <sharinit.cpp>
-
 #include <iostream>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../header/stb_image.h"
 
 vec2 vmini(-250, -250);
 vec2 vmaxi(250, 250);
@@ -43,7 +44,6 @@ void vmin(vec2 *a, vec2 *b) {
 
     if(b->y < a->y)
         a->y = b->y;
-
 }
 
 int gen_id() {
@@ -73,7 +73,6 @@ int collision(grid_element *elem, game_object *object) {
     }
 }
 
-
 void update_object_grid_relation(game_grid *grid, game_object *object) {
     for(int i = 0; i < grid->elem_count; ++i) {
         grid_element *elem = &grid->elements[i];
@@ -99,41 +98,42 @@ void update_object_grid_relation(game_grid *grid, game_object *object) {
 GAME_UPDATE_FUNC(update) {
     // TIME_BLOCK;
 
-    //
-    if(sh_button(gamestate, 0, vec2(25, 25), "hello world", 40, 20)) {
-        std::cout << "it works" << std::endl;
-    }
+    // if(sh_button(gamestate, 0, vec2(25, 25), "hello world", 40, 20)) {
+    //     std::cout << "it works" << std::endl;
+    // }
     
-    // rect_object *paddle = nullptr;
-    //
-    // if(gamestate->named_objects[PADDLE]) {
-    //     paddle = (rect_object *) gamestate->named_objects[PADDLE]->obj;
-    // }
-    //
-    // if(paddle) {
-    //
-    //     if(inputs->keyboard.arrow_left) {
-    //         paddle->previous_pos = paddle->rect->_position;
-    //         paddle->rect->move_position(-paddle->velocity*dt);
-    //     }
-    //
-    //     if(inputs->keyboard.arrow_right) {
-    //         paddle->previous_pos = paddle->rect->_position;
-    //         paddle->rect->move_position(paddle->velocity*dt);
-    //     }
-    // }
+    rect_object *paddle = nullptr;
 
-    objects *dynamic_obj = gamestate->objects_to_update;
-    game_object *root_node = dynamic_obj->root_node;
-    for(int i = 0; i < dynamic_obj->object_count; ++i) {
-        switch(root_node->type) {
-            case BALL: {
-                ball_object *ball = (ball_object *) root_node->obj; 
-                ball->previous_pos = ball->circ->_position;
-                ball->circ->move_position(ball->velocity*dt); 
-            } break;
+    if(gamestate->named_objects[PADDLE]) {
+        paddle = (rect_object *) gamestate->named_objects[PADDLE]->obj;
+    }
+
+    if(paddle) {
+        if(inputs->keyboard.arrow_left) {
+            paddle->previous_pos = paddle->rect->_position;
+            paddle->rect->move_position(-paddle->velocity*dt);
         }
-        root_node = root_node->next_object;
+
+        if(inputs->keyboard.arrow_right) {
+            paddle->previous_pos = paddle->rect->_position;
+            paddle->rect->move_position(paddle->velocity*dt);
+        }
+    }
+
+
+    if(!without_move) {
+        objects *dynamic_obj = gamestate->objects_to_update;
+        game_object *root_node = dynamic_obj->root_node;
+        for(int i = 0; i < dynamic_obj->object_count; ++i) {
+            switch(root_node->type) {
+                case BALL: {
+                               ball_object *ball = (ball_object *) root_node->obj; 
+                               ball->previous_pos = ball->circ->_position;
+                               ball->circ->move_position(ball->velocity*dt); 
+                           } break;
+            }
+            root_node = root_node->next_object;
+        }
     }
 
     if(!without_move) {
@@ -261,9 +261,12 @@ GAME_UPDATE_FUNC(update) {
 }
 
 GAME_RENDER_FUNC(render) {
+    TIME_BLOCK;
     int vpos = gamestate->vpos_attrib_loc;
     int color = gamestate->color_attrib_loc;
     int model = gamestate->model_t_attrib_loc;
+    int tex_coord = gamestate->tex_coord;
+    int has_tex = gamestate->has_texture_attrib;
     input_state *inputs = gamestate->inputs;
 
     if(inputs->mouse.left_button) {
@@ -271,6 +274,9 @@ GAME_RENDER_FUNC(render) {
         gamestate->ui_state.hot_object = 0;
 
     }
+
+    ball_object *b = (ball_object *)gamestate->named_objects[MAIN_BALL]->obj;
+    push_draw_text(gamestate, sh_vec2tstr(&b->previous_pos), 20, vec2(-240, 50), vec4(0, 1, 0, 1));
 
     objects *dynamic_obj = gamestate->objects_to_update;
     game_object *root_node = dynamic_obj->root_node;
@@ -282,7 +288,6 @@ GAME_RENDER_FUNC(render) {
                 vec2 old_pos = ball->circ->_position;
                 vec2 new_pos = ball->circ->_position*alpha + ball->previous_pos*(1.0 - alpha);
                 ball->circ->set_position(new_pos);
-
                 ball->circ->render(vpos, color, model);
                 ball->circ->set_position(old_pos);
             } break;
@@ -320,10 +325,12 @@ GAME_RENDER_FUNC(render) {
         }
         root_node = root_node->next_object;
     }
+    //
+    // if(sh_button(gamestate, __LINE__, vec2(0, 0) , "Hello Discord, Glossy", vec4(1, 1, 1, 1))) {
+    //
+    // }
 
-    if(sh_button(gamestate, __LINE__, vec2(0, 0) , "hello world", 20, 40)) {
-
-    }
+    // push_draw_element(&gamestate->renderstack, push_draw_text(&gamestate->font, "abcdefghijklmnopqrstuvwxyz", font_size, vec2(-200, 0)));
 
     for(int i = 0; i < gamestate->object_count; ++i) {
         game_object *root_node = gamestate->named_objects[i];
@@ -356,17 +363,28 @@ GAME_RENDER_FUNC(render) {
     
     while(pop_element(&gamestate->renderstack, &draw)) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*draw.point_count, draw.points, GL_DYNAMIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*(draw.point_count*(1 + draw.has_texture)), draw.points, GL_DYNAMIC_DRAW);
         glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+        if(draw.has_texture) {
+            glEnableVertexAttribArray(gamestate->tex_coord);
+            glBindTexture(GL_TEXTURE_2D, gamestate->fnt_tex);
+            glVertexAttribPointer(tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(sizeof(vec2)*draw.point_count));
+        }
+
+
+        
+        glUniform1i(has_tex, draw.has_texture);
         glUniform4fv(color, 1, &draw.color[0]);
         glDrawArrays(draw.command, 0, draw.point_count);
+        glDisableVertexAttribArray(gamestate->tex_coord);
         free(draw.points);
     }
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glDeleteBuffers(1, &vbo);
 
-    
+    glUniform1i(has_tex, 0);
 }
 
 void free_objects_all(game_state *gs) {
@@ -381,6 +399,7 @@ void free_objects_all(game_state *gs) {
 
 GAME_INIT_FUNC(init) {
 
+    glfwMakeContextCurrent(gamestate->window);
 
     int size = 0;
     char *file = shareadfile("sh_font.fnt", &size);
@@ -390,16 +409,25 @@ GAME_INIT_FUNC(init) {
     
     file = shareadfile("sh_font_0.png", &size);
     
+#if 1
     int32 x = 0;
     int32 y = 0;
+    int32 n = 0;
     uint8 *image = sh_load_png_mem((uint8 *)file, size, &x, &y);
-
     free(file);
+    
+    glGenTextures(1, &gamestate->fnt_tex);
+    glBindTexture(GL_TEXTURE_2D, gamestate->fnt_tex);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, x, y, 0, GL_RED, GL_UNSIGNED_BYTE, image);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,  GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 
-    glfwMakeContextCurrent(gamestate->window);
     if (gamestate->named_objects) {
         free_objects_all(gamestate);
     }
+#endif
 
     gamestate->named_objects = (game_object **) malloc(sizeof(game_object *)*10);
     gamestate->object_count = 0;
@@ -417,10 +445,8 @@ GAME_INIT_FUNC(init) {
     gamestate->renderstack = {};
     make_stack_capacity(&gamestate->renderstack, 10);
 
-    init_grid(&gamestate->overlord, 500, 500, 9, 9 , vec2(0, 0));
+    init_grid(&gamestate->overlord, 500, 500, 13, 13 , vec2(0, 0));
 
-    //
-    
     for(int i = 0; i < gamestate->overlord.width_elem_count*gamestate->overlord.height_elem_count; ++i) {
         init_grid_elem(&gamestate->overlord, i, vec4(1, 1, 1, 1));
     }
@@ -431,25 +457,36 @@ GAME_INIT_FUNC(init) {
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250,  245), vec2( 250,  245), vec4(1, 0, 0, 1)), true); //top
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250, -245), vec2( 250, -245), vec4(1, 0, 0, 1)), true); //bottom
 
-    // game_object *testing_object = make_sh_circle(gen_id(), 0, -230, 5, 300, vec2(0, 1), vec4(1, 0, 1, 1));
-    // ball_object *ball = (ball_object *) testing_object->obj;
-    // add_to_grid_objects(gamestate, testing_object , false); 
+    game_object *testing_object = make_sh_circle(gen_id(), 0, -230, 5, 300, vec2(0, 1), vec4(1, 0, 1, 1));
+    ball_object *ball = (ball_object *) testing_object->obj;
+    add_to_grid_objects(gamestate, testing_object , false); 
 
 
     // for (int i = 0; i < 100; ++i) {
     //     game_object *new_object = make_sh_circle(gen_id(), 20*cos(i), 20*sin(i), 5, 400, vec2(cos(i), sin(i)), vec4(1, sin(cos(i*torad)*cos(i*torad)), cos(i*torad), 1));
     //     add_to_grid_objects(gamestate, new_object, false); 
     // }
+    
+    gamestate->named_objects[MAIN_BALL] =  make_sh_circle(gen_id(), -200, 0, 5, 200, vec2(1, 0), vec4(1, 0, 0, 1));
+    add_to_grid_objects(gamestate, gamestate->named_objects[MAIN_BALL], false); 
 
-    // gamestate->named_objects[PADDLE] =  make_sh_rect(gen_id(), 0, 0,  250, 15, 80, vec4(1, 1, 1, 1));
-    // add_to_grid_objects(gamestate, gamestate->named_objects[PADDLE], false); 
+    gamestate->named_objects[PADDLE] =  make_sh_rect(gen_id(), 0, 0,  250, 15, 80, vec4(1, 1, 1, 1));
+    add_to_grid_objects(gamestate, gamestate->named_objects[PADDLE], false); 
 }
 
 debug_record records[__COUNTER__ +1];
+
 GAME_DEBUG_FUNC(debug_func) {
+    static char buffer[256] = {};
+    int32 debug_fnt_size = PNT2PXL(17);
+    vec2 cursor = vec2(-250, 250 - debug_fnt_size);
+    float scale = (float)debug_fnt_size/-gamestate->font.info.size;
     for(int i = 0; i < ArrayCount(records); ++i) {
         debug_record *record = records+i;
-        // if(record->func_name != NULL)
-        //     std::cout << record->func_name << " " << record->time << std::endl;
+        if(record->func_name != NULL) {
+            sprintf_s(buffer, 256, "%s : %d", record->func_name, record->time);
+            push_draw_text(gamestate, buffer, debug_fnt_size, cursor, vec4(0, 1, 0, 1));
+            cursor.y -= gamestate->font.common.lineHeight*scale;
+        }
     }
 }
