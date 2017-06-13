@@ -14,6 +14,7 @@ set LibDirectory=/LIBPATH:S:/Code/libs/lib/include/Shar/build-win/lib /LIBPATH:S
 
 
 cl %CommonCompilerFlags% ../src/game_logic.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_logic%TIME_STAMP%.pdb %CommonLinkers%
+cl %CommonCompilerFlags% ../src/game_debug_screen.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_debug_screen%TIME_STAMP%.pdb %CommonLinkers%
 cl %CommonCompilerFlags% ../src/main.cpp %IncludeHeaderDir%  %Libs% /link %LibDirectory% %CommonLinkers% 
 
 popd

@@ -54,6 +54,142 @@ int point_in_circ(vec2 *p, sh_circ_container *c) {
     return (d2.x*d2.x + d2.y*d2.y) < c->r*c->r;
 }
 
+int point_in_circ(ball_object *ball, vec2 *p) {
+    vec2 d2 = ball->circ->_position - *p;
+    return (d2.x*d2.x + d2.y*d2.y) < ball->circ->_r*ball->circ->_r;
+}
+
+float line_to_pnt_thresh = 0.0001; //@Note(sharo): when should a line be considered a point
+
+double closest_point_seg_seg(vec2 p1, vec2 q1, vec2 p2, vec2 q2, vec2 *res) {
+    vec2 d1 = q1 - p1;
+    vec2 d2 = q2 - p2;
+
+    float sq_len_d1 = dot(d1, d1);
+    float sq_len_d2 = dot(d2, d2);
+
+    if(sq_len_d1 < line_to_pnt_thresh && sq_len_d2 < line_to_pnt_thresh) {
+        vec2 p = p2 - p1;
+        *res = p;
+        return dot(p, p);
+    }
+
+    if(sq_len_d1 < line_to_pnt_thresh) {
+        float t = dot(d2, p1 - p2)/sq_len_d2;
+        clamp(t, 0.0, 1.0);
+        vec2 p = p1 - p2 - t*d2;
+        *res = p;
+        return dot(p, p);
+    }
+
+    if(sq_len_d2 < line_to_pnt_thresh) {
+        float s = dot(d1, p2 - p1)/sq_len_d1;
+        clamp(s, 0.0, 1.0);
+        vec2 p = p2 - p1 - s*d1;
+        *res = p;
+        return dot(p, p);
+    }
+
+    float a = dot(d1, d2);
+    float mat_determ = a*a - sq_len_d2*sq_len_d1;
+
+    //@Note(sharo): floating point is iffy, so check if its not zero is better
+    //than checking for zero
+    float s = 0.0;
+    vec2 d = p1 - p2;
+    float f = dot(d2, d);
+    float e = dot(d1, d);
+    if(mat_determ != 0.0) {
+        s =  -a*f + e*sq_len_d2;
+        s = s/mat_determ;
+        s = clamp(s, 0.0, 1.0);
+    }
+
+    float t = ( a*s + f )/sq_len_d2;
+
+    if(t < 0.0) {
+        t = 0;
+        s = (-e)/sq_len_d1;
+    } else if(t > 1.0) {
+        t = 1.0;
+        s = ( a - e )/sq_len_d1;
+    }
+
+    s = clamp(s, 0.0, 1.0);
+
+    vec2 r1 = p1 + s*d1;
+    vec2 r2 = p2 + t*d2;
+
+    vec2 p = r1 - r2;
+    *res = p;
+    float result = dot(p, p);
+    
+#if 0
+    if(gl_game_state) {
+        push_draw_text(gl_game_state, sh_flttstr(result), 20, vec2(100, 120), vec4(1, 1, 1, 1));
+        push_draw_text(gl_game_state, sh_vec2tstr(&p), 20, vec2(-100, 100), vec4(1, 1, 1, 1));
+        // push_draw_element(&gl_game_state->renderstack, sh_gen_draw_circ(ball->circ->_position, ball->circ->_r, vec4(1, 1, 0, 1)));
+        push_draw_element(&gl_game_state->renderstack, sh_gen_draw_line(r1, r2, vec4(1, 1, 0, 1)));
+    }
+#endif
+
+    return result;
+}
+
+float book_closest_seg_seg(vec2 p1, vec2 q1, vec2 p2, vec2 q2) {
+    vec2 d1 = q1 - p1;
+    vec2 d2 = q2 - p2;
+    vec2 r = p1 - p2;
+    float a = dot(d1, d1);
+    float e = dot(d2, d2);
+    float f = dot(d2, r);
+    float s;
+    float t;
+    vec2 c1;
+    vec2 c2;
+    if (a <= line_to_pnt_thresh && e <= line_to_pnt_thresh) {
+        s = t = 0.0f;
+        c1 = p1;
+        c2 = p2;
+        return dot(c1 - c2, c1 - c2);
+    }
+
+    if(a <= line_to_pnt_thresh) {
+        s = 0.0f;
+        t = f/e;
+        t = clamp(t, 0.0f, 1.0f);
+    } else {
+        float c = dot(d1, r);
+        if(e <= line_to_pnt_thresh) {
+            t = 0.0f;
+            s = clamp(-c/a, 0.0f, 1.0f);
+        } else {
+            float b = dot(d1, d2);
+            float denom = a*e - b*b;
+            
+            if(denom != 0.0) {
+                s = clamp((b*f - c*e)/denom, 0.0f, 1.0f);
+            } else s = 0.0f;
+
+            t = (b*s + f)/e;
+
+            if(t < 0.0f) {
+                t = 0.0;
+                s = clamp(-c/a, 0.0f, 1.0);
+            } else if(t > 1.0f) {
+                t = 1.0f;
+                s = clamp((b-c)/a, 0.0f, 1.0f);
+            }
+        }
+    }
+
+    c1 = p1 + d1*s;
+    c2 = p2 + d2*t;
+    return dot(c1 - c2, c1 - c2);
+}
+
+
+
 vec2 closes_point_in_rect(sh_circle *circ, sh_rect *rect) {
     vec2 pos = circ->_position;
     float x_left  = pos.x - rect->_left;
@@ -78,6 +214,8 @@ vec2 closes_point_in_rect(sh_circle *circ, sh_rect *rect) {
     }
 }
 
+
+
 void col_circ(ball_object *ball, game_object *object, game_state *state) {
 
     switch(object->type) {
@@ -88,11 +226,9 @@ void col_circ(ball_object *ball, game_object *object, game_state *state) {
         case LINE: {
             line_object *line = (line_object *) object->obj;
             vec2 result;
-            if(col_line_capsuleSAT(ball, line, &result)) {
+            if(col_dot_line_norm(ball, line, &result)) {
                 ball->circ->set_position(result);
-                vec2 line_vec = normalize(line->line->point[1] - line->line->point[0]);
-                vec2 line_normal = vec2(-line_vec.y, line_vec.x);
-                ball->circ->_direction = reflect(ball->circ->_direction, line_normal);
+                ball->circ->_direction = reflect(ball->circ->_direction, line->normal);
             }
         } break;
         
@@ -145,11 +281,10 @@ void col_line(line_object *line, game_object *object, game_state *state) {
         case BALL: {
             ball_object *ball = (ball_object *) object->obj;
             vec2 result;
-            if(col_line_capsuleSAT(ball, line, &result)) {
+            
+            if(col_dot_line_norm(ball, line, &result)) {
                 ball->circ->set_position(result);
-                vec2 line_vec = normalize(line->line->point[1] - line->line->point[0]);
-                vec2 line_normal = vec2(-line_vec.y, line_vec.x);
-                ball->circ->_direction = reflect(ball->circ->_direction, line_normal);
+                ball->circ->_direction = reflect(ball->circ->_direction, line->normal);
             }
         } break;
     }
@@ -268,17 +403,62 @@ int col_line_line(vec2 a, vec2 b, vec2 c, vec2 d, vec2 *result ) {
 
 }
 
-
-int col_line_capsuleSAT(ball_object *ball, line_object *line, vec2 *result) {
+int col_seg_seg(ball_object *ball, line_object *line, vec2 *result) {
     TIME_BLOCK;
+    float dist = closest_point_seg_seg(
+            line->line->point[0], line->line->point[1],
+            ball->previous_pos, ball->circ->_position, result);
 
-    vec2 *ball_dir = &ball->circ->_direction;
-    int col = col_line_line(line->line->point[0], line->line->point[1], ball->previous_pos - *ball_dir*ball->circ->_r , ball->circ->_position + *ball_dir*ball->circ->_r , result);
-    
-    if(col) {
-        *result = *result - *ball_dir*ball->circ->_r*1.2;
+    return (dist) <= (ball->circ->_r*ball->circ->_r);
+}
+
+int col_dot_line_norm(ball_object *ball, line_object *line, vec2 *result) {
+    TIME_BLOCK;
+    float d1 = abs(dot(ball->previous_pos - line->line->point[0], line->normal));
+    float d2 = abs( dot(ball->circ->_position - line->line->point[1], line->normal) );
+
+    // float r2 = ball->circ->_r;
+    // r2 *= r2;
+
+    float t = (ball->circ->_r + 1 - d1)/(d2 - d1);
+    vec2 vec_dir = ball->circ->_position - ball->previous_pos;
+
+    int col = (t >= 0.0 && t <= 1.0);
+
+    if(!col) {
+        if(d1 < ball->circ->_r) col = 1;
+
+        if(d2 < ball->circ->_r) col = 1;
     }
 
+
+#if 0
+    push_draw_element(&gl_game_state->renderstack, sh_gen_draw_circ(ball->circ->_position, ball->circ->_r, vec4(1, 1, 0, 1)));
+    push_draw_element(&gl_game_state->renderstack, sh_gen_draw_circ(ball->previous_pos, ball->circ->_r, vec4(0, 1, 0, 1)));
+    push_draw_text(gl_game_state, sh_flttstr(t), 20, vec2(100, 0), vec4(1, 1, 1, 1));
+    push_draw_text(gl_game_state, sh_flttstr(d1), 20, vec2(100, -20), vec4(1, 1, 1, 1));
+    push_draw_text(gl_game_state, sh_flttstr(d2), 20, vec2(100, -40), vec4(1, 1, 1, 1));
+    push_draw_text(gl_game_state, sh_inttstr(col), 20, vec2(100, 25), vec4(1, 1, 1, 1));
+    // push_draw_text(gl_game_state, sh_inttstr(col_seg_seg(ball, line, result)), 20, vec2(100, 50), vec4(1, 1, 1, 1));
+#endif
+    if(col) {
+        t -= 0.1;
+        
+        *result = ball->previous_pos + vec_dir*t;
+        // if(d1 <= r2 && d2 <= r2) { //ball inside the line before and after the frame
+        //     
+        // // push_draw_element(&gl_game_state->renderstack, sh_gen_draw_circ(ball->circ->_position, ball->circ->_r, vec4(1, 1, 0, 1)));
+        // }
+    }
+
+    return col;
+
+}
+
+
+int col_line_capsuleSAT(ball_object *ball, line_object *line, vec2 *result) {
+    int col = col_seg_seg(ball, line, result);
+    col = col_dot_line_norm(ball, line, result);
     return col;
 }
 

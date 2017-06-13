@@ -1,6 +1,8 @@
 #include "../header/grid_managment.h"
 #include <iostream>
 
+game_state *gl_game_state = nullptr;
+
 void init_grid(game_grid *grid, float grid_width, float grid_height, int row, int col, vec2 pos) {
 
     grid->grid_width = grid_width;
@@ -180,16 +182,26 @@ int find_grid_index(game_grid *grid, vec2 position) {
     return row*grid->width_elem_count + col;
 }
 
-void render_grid(game_grid *grid, int pos_attrib, int color_att) {
-    glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);  
+void render_grid(game_state *gs) {
+    uint32 vpos = gs->vpos_attrib_loc;
+    uint32 model = gs->model_t_attrib_loc;
+    uint32 color_att = gs->color_attrib_loc;
+     
+    game_grid *grid = &gs->overlord;
 
-    glEnableVertexAttribArray(pos_attrib);
-    glVertexAttribPointer(pos_attrib, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, grid->_vbo);  
+    //
+    glEnableVertexAttribArray(vpos);
+    glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
     vec4 color(0, 1, 1, 1);
     glUniform4fv(color_att, 1, &color[0]);
     glDrawArrays(GL_LINE_LOOP, 0, 4);
 
     glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    for(int i = 0; i < grid->elem_count; ++i) {
+        render_grid_elem(&grid->elements[i], vpos, model, color_att);
+    }
 }
 
 void render_grid_elem(grid_element *grid_elem, int pos_attrib, int transform_att, int color_att) { 
@@ -203,6 +215,105 @@ void render_grid_elem(grid_element *grid_elem, int pos_attrib, int transform_att
     glDrawArrays(GL_LINE_LOOP, 0, 4);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
+void render_game_object(game_state *gs, game_object *gm_obj) {
+    int vpos = gs->vpos_attrib_loc;
+    int color = gs->color_attrib_loc;
+    int model = gs->model_t_attrib_loc;
+    int tex_coord = gs->tex_coord;
+    int has_tex = gs->has_texture_attrib;
+
+    switch(gm_obj->type) {
+        case BALL: {
+            ball_object *ball = (ball_object *) gm_obj->obj; 
+            ball->circ->render(vpos, color, model);
+        } break;
+        case RECTANGLE: {
+            rect_object *rect = (rect_object *) gm_obj->obj;
+            rect->rect->render(vpos, color, model);
+        } break;
+        case LINE: {
+            line_object *line = (line_object *) gm_obj->obj;
+            line->line->render(vpos, color, model);
+        } break;
+    }
+}
+
+
+void render_draw_stack(game_state *gs) {
+    int vpos = gs->vpos_attrib_loc;
+    int color = gs->color_attrib_loc;
+    int model = gs->model_t_attrib_loc;
+    int tex_coord = gs->tex_coord;
+    int has_tex = gs->has_texture_attrib;
+    int fnt_tex = gs->fnt_tex;
+    draw_stack *stack = &gs->renderstack;
+
+    uint32 vbo;
+    glGenBuffers(1, &vbo);
+    draw_element draw = {};
+
+    while(pop_element(stack, &draw)) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*(draw.point_count*(1 + draw.has_texture)), draw.points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+        if(draw.has_texture) {
+            glEnableVertexAttribArray(tex_coord);
+            glBindTexture(GL_TEXTURE_2D, fnt_tex);
+            glVertexAttribPointer(tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(sizeof(vec2)*draw.point_count));
+        }
+
+        glUniform1i(has_tex, draw.has_texture);
+        glUniform4fv(color, 1, &draw.color[0]);
+        glDrawArrays(draw.command, 0, draw.point_count);
+        glDisableVertexAttribArray(tex_coord);
+        free(draw.points);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &vbo);
+
+    glUniform1i(has_tex, 0);
+}
+
+void render_draw_stack(game_state *gs, draw_stack *stack) {
+    int vpos = gs->vpos_attrib_loc;
+    int color = gs->color_attrib_loc;
+    int model = gs->model_t_attrib_loc;
+    int tex_coord = gs->tex_coord;
+    int has_tex = gs->has_texture_attrib;
+    int fnt_tex = gs->fnt_tex;
+    // draw_stack *stack = &gs->renderstack;
+
+    uint32 vbo;
+    glGenBuffers(1, &vbo);
+    draw_element draw = {};
+
+    while(pop_element(stack, &draw)) {
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*(draw.point_count*(1 + draw.has_texture)), draw.points, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
+
+        if(draw.has_texture) {
+            glEnableVertexAttribArray(tex_coord);
+            glBindTexture(GL_TEXTURE_2D, fnt_tex);
+            glVertexAttribPointer(tex_coord, 2, GL_FLOAT, GL_FALSE, 0, (GLvoid*)(sizeof(vec2)*draw.point_count));
+        }
+
+        glUniform1i(has_tex, draw.has_texture);
+        glUniform4fv(color, 1, &draw.color[0]);
+        glDrawArrays(draw.command, 0, draw.point_count);
+        glDisableVertexAttribArray(tex_coord);
+        free(draw.points);
+    }
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glDeleteBuffers(1, &vbo);
+
+    glUniform1i(has_tex, 0);
+}
+
 
 void move_bucket_elem_to_grid(game_state *gs,
         object_bucket *mvd_obj_bucket,
@@ -272,6 +383,10 @@ game_object* make_sh_line(int id, vec2 a, vec2 b, vec4 color) {
     game_object *obj  = (game_object *) malloc(sizeof(game_object)); 
     line_object *line = (line_object *) malloc(sizeof(line_object));
     line->line = new sh_line(a, b, color);
+    
+    vec2 line_vec = b - a;
+    vec2 line_vec_norm = normalize(line_vec);
+    line->normal = vec2(line_vec_norm.y, -line_vec_norm.x);
 
     obj->id = id;
     obj->type = LINE;
@@ -345,7 +460,7 @@ game_object* make_sh_circle(int id, float x, float y, float radius,
     return (obj);
 }
 
-draw_element sh_draw_rect(vec2 pos, float width, float height, vec4 color) {
+draw_element sh_gen_draw_rect(vec2 pos, float width, float height, vec4 color) {
     draw_element elem = {};
     elem.points = (vec2 *) malloc(sizeof(vec2) * 4);
 
@@ -362,7 +477,7 @@ draw_element sh_draw_rect(vec2 pos, float width, float height, vec4 color) {
 }
 
 
-draw_element sh_draw_rect_fill(vec2 pos, float width, float height, vec4 color) {
+draw_element sh_gen_draw_rect_fill(vec2 pos, float width, float height, vec4 color) {
     draw_element elem = {};
     elem.points = (vec2 *) malloc(sizeof(vec2) * 6);
 
@@ -382,7 +497,7 @@ draw_element sh_draw_rect_fill(vec2 pos, float width, float height, vec4 color) 
 }
 
 
-draw_element sh_draw_circ(vec2 pos, float r, vec4 color) {
+draw_element sh_gen_draw_circ(vec2 pos, float r, vec4 color) {
 
     int segments = 32;
     draw_element elem = {};
@@ -392,13 +507,24 @@ draw_element sh_draw_circ(vec2 pos, float r, vec4 color) {
     float angle = (6.28)/segments;
 
     for(int i = 0; i < segments; ++i) {
-        elem.points[i] = vec2(cos(angle*i), sin(angle*i))*r;
+        elem.points[i] = vec2(cos(angle*i)*r + pos.x, sin(angle*i)*r + pos.y);
     }
 
     elem.point_count = segments;
     elem.command = GL_LINE_LOOP;
     elem.color = color;
 
+    return elem;
+}
+
+draw_element sh_gen_draw_line(vec2 a, vec2 b, vec4 color) {
+    draw_element elem = {};
+    elem.points = (vec2 *) malloc(sizeof(vec2)*2);
+    elem.points[0] = a;
+    elem.points[1] = b;
+    elem.point_count = 2;
+    elem.command = GL_LINES;
+    elem.color = color;
     return elem;
 }
 
@@ -465,7 +591,7 @@ void draw_char_into_buffer(vec2 *quad_buff, vec2 *tex_buff, sh_fnt *fnt, char c,
     tex_buff[5] = vec2((ch->x + ch->width)/fw, (ch->y + ch->height)/fh);
 }
 
-draw_element sh_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color) {
+draw_element sh_gen_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color) {
     TIME_BLOCK;
     int32 length = sh_strlen((uint8 *)text) - 1;
     draw_element elem = {};
@@ -489,7 +615,7 @@ draw_element sh_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position,
 
 
 void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color) {
-    push_draw_element(&gs->renderstack, sh_draw_text(&gs->font, text, font_size, position, color));
+    push_draw_element(&gs->renderstack, sh_gen_draw_text(&gs->font, text, font_size, position, color));
 }
 
 void make_stack_capacity(draw_stack *stack, int new_capacity) {

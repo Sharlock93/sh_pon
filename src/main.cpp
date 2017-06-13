@@ -62,6 +62,15 @@ static void mouse_button_call(GLFWwindow *window, int button, int action, int mo
         inputs_state.mouse.left_button = 0;
         inputs_state.mouse.hot_object = nullptr;
     }
+    
+    if((button == GLFW_MOUSE_BUTTON_RIGHT) && (action == GLFW_PRESS)) {
+         inputs_state.mouse.right_button = 1;
+    } else if((button == GLFW_MOUSE_BUTTON_RIGHT) && (action == GLFW_RELEASE)) {
+        inputs_state.mouse.right_button = 0;
+    }
+
+
+
 }
 
 GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
@@ -215,6 +224,7 @@ void unload_game_dll(game_state *gstate) {
 void render_screen(game_state *gs, double alpha) {
     //Todo(sharo): what exactly needs to be rebinded for proper context switch
     glfwMakeContextCurrent(gs->window);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
     glUseProgram(gs->current_program);
     gs->render(gs, alpha);
     glfwSwapBuffers(gs->window);
@@ -226,11 +236,13 @@ int main(int argc, char ** argv) {
 
 
     game_state gamestate = {};
-    // game_state gamestate2 = {};
+    game_state gamestate2 = {};
 
     gamestate.inputs = &inputs_state;
-    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 100, 100);
+    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 0, 100);
+    GLFWwindow *window2   = init(&gamestate2, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 500, 100);
     load_program_attrib_location(&gamestate);
+    load_program_attrib_location(&gamestate2);
 
     
 
@@ -238,8 +250,8 @@ int main(int argc, char ** argv) {
     char *temp_name =  "_temp.dll";
     char *source_name2 = "game_debug_screen.dll";
     load_game_dll(&gamestate,  source_name, temp_name);
-    // load_game_dll(&gamestate2, source_name2, temp_name);
-    // gamestate2.debug_state = &gamestate;
+    load_game_dll(&gamestate2, source_name2, temp_name);
+    gamestate2.debug_state = &gamestate;
 
     bool run = true;
     glfwSetTime(0);
@@ -255,9 +267,10 @@ int main(int argc, char ** argv) {
     int n_key_state = 0;
     int m_key_state = 0;
     int frame_to_sim = 0;
+    int pause = 1;
+    int current_pause_state = pause;
 
     while(run) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); 
         previous_time = current_time; 
         current_time = glfwGetTime();
 
@@ -280,6 +293,11 @@ int main(int argc, char ** argv) {
             gamestate.is_init = 1;
         }
 
+        if(!gamestate2.is_init) {
+            gamestate2.init(&gamestate2);
+            gamestate2.is_init = 1;
+        }
+
         //Todo(sharo): this is only window1 must be looped
         if((glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)) {
             run  = false;
@@ -290,11 +308,11 @@ int main(int argc, char ** argv) {
         int m_key_curr = (glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS);
 
         if(n_key_curr && !n_key_state) {
-            frame_to_sim++;
+            pause = !pause;
         }
 
         if(m_key_curr && !m_key_state) {
-            frame_to_sim = 20;
+            frame_to_sim = 1;
         }
 
 
@@ -302,14 +320,24 @@ int main(int argc, char ** argv) {
         m_key_state = m_key_curr;
 
         //Todo(sharo): this needs to be added to a loop for all the screens
-        while(( total_time >= dt ) ) {
-            double passed_in = min(frame_time, dt);
-            gamestate.update(&gamestate, &inputs_state, passed_in, false);
-            total_time -= dt; 
+        // while(( total_time >= dt ) ) {
+            
+        current_pause_state = pause;
+        if(frame_to_sim > 0 && pause) {
+            pause = 0;
+            frame_to_sim = 0;
         }
 
-        double time_left_alpha = total_time/dt;
+        double passed_in = min(frame_time, dt);
+        gamestate.update(&gamestate, &inputs_state, passed_in, pause);
+        gamestate2.update(&gamestate, &inputs_state, passed_in, false);
+        pause = current_pause_state;
+        // total_time -= dt; 
+        // }
+
+        double time_left_alpha = 0;
         render_screen(&gamestate, time_left_alpha);
+        render_screen(&gamestate2, time_left_alpha);
         gamestate.debug_func(&gamestate);
 
         glfwPollEvents(); 

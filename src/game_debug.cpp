@@ -122,7 +122,7 @@ int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 c
     input_state *inputs = gs->inputs;
     sh_ui_state *state = &gs->ui_state;
     vec2 mouse = vec2(inputs->mouse.mouse_x, inputs->mouse.mouse_y);
-    draw_element rect = sh_draw_rect_fill(position, width + 10, height + 10, color);
+    draw_element rect = sh_gen_draw_rect_fill(position, width + 10, height + 10, color);
 
     int clicked = 0;
 
@@ -154,7 +154,7 @@ int sh_button_circ(game_state *gs, unsigned int id, vec2 position, char *text, f
     sh_ui_state *state = &gs->ui_state;
 
     vec2 mouse = vec2(inputs->mouse.mouse_x, inputs->mouse.mouse_y);
-    draw_element circ = sh_draw_circ(position, r, vec4(1, 1, 1, 1));
+    draw_element circ = sh_gen_draw_circ(position, r, vec4(1, 1, 1, 1));
 
     int clicked = 0;
     sh_circ_container circ_cont = {position, r};
@@ -196,20 +196,20 @@ char* sh_inttstr(int32 val) {
 
 char* sh_flttstr(float val) {
     //Todo(sharo): implement this
-    static char buffer[12] = {};
+    static char buffer[64] = {};
     // int32 significant = *(int32 *) &val & (( 1 << 23 ) - 1);
     // int32 exponent = ( *(int32 *) &val & ( (1 << 31) - 1 ) ) >> 23;
     // int32 sign = *(int32 *) &val >> 30;
     //
     // exponent -= 127;
-    sprintf_s(buffer, 12, "%.3f", val);
+    sprintf_s(buffer, 64, "%.3f\n", val);
     
     return buffer;
 }
 
 char* sh_vec2tstr(vec2 *vec) {
-    static char buffer[24] = {};
-    sprintf_s(buffer, 24, "vec2(%.3f, %.3f)", vec->x, vec->y);
+    static char buffer[64] = {};
+    sprintf_s(buffer, 64, "vec2(%.3f, %.3f)", vec->x, vec->y);
     return buffer;
 }
 

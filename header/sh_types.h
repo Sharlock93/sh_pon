@@ -1,5 +1,7 @@
 #include <inttypes.h>
 
+#ifndef SH_TYPES
+#define SH_TYPES
 typedef unsigned __int8 uint8;
 typedef unsigned __int16 uint16;
 typedef unsigned __int32 uint32;
@@ -15,3 +17,4 @@ struct sh_string {
     char *str;
     uint32 length;
 };
+#endif

@@ -8,6 +8,8 @@
 #define TIME_BLOCK TIME_BLOCK_(__LINE__)
 #define sh_assert(con) if(!(con)) __debugbreak(); 
 
+struct game_object;
+
 struct debug_record {
     int line;
     char *filename;
@@ -39,6 +41,11 @@ struct sh_ui_state {
     unsigned int active_object;
 };
 
+struct sh_debug_ui_state { 
+    game_object *active_object; //@Todo(sharo): this should have the ability to contain multiple objects
+    game_object *hot_object; //@Todo(sharo): this should have the ability to contain multiple objects
+};
+ 
 struct sh_rect_container {
     vec2 pos;
     float width;

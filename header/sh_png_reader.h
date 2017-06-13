@@ -37,6 +37,11 @@ struct sh_zlib_block {
     uint32 check_value;
 };
 
+struct sh_png_datastream {
+    uint8 *data;
+    uint32 size;
+};
+
 struct sh_bits_buffer {
     uint8 *stream;
     uint32 buffer;
@@ -123,7 +128,7 @@ sh_png_ihdr sh_png_read_ihdr(sh_png_chunk *chunk);
 sh_zlib_block sh_read_zlib_block(uint8 *stream, uint32 len);
 uint32* sh_build_huffman_tree(uint8 *code_bit_lengths, uint32 size_of_array);
 uint32 sh_decode_huffman(sh_bits_buffer *stream_data, uint32 *symbols_codes, uint8 *symbols_bit_length, uint32 symbol_count);
-uint8* sh_decompress_png_deflate(sh_zlib_block *zip);
+uint8* sh_decompress_png_deflate(sh_png_datastream *data);
 
 uint8* sh_defilter_png(uint8 *decompressed_png, sh_png_ihdr *ihdr);
 void sh_load_png_mem(uint8 *mem, uint32 mem_size);

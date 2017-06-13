@@ -10,6 +10,7 @@
 #include <sh_rect.h>
 #endif
 
+#include "../header/sh_types.h"
 #include "../header/game_debug.h"
 #include "../header/sh_fnt_reader.h"
 
@@ -34,8 +35,9 @@ struct object_bucket_list;
 struct grid_element;
 struct game_grid;
 struct game_state;
+struct draw_stack;
 
-#define GAME_UPDATE_FUNC(name) void name(game_state *gamestate, input_state *inputs, double dts, bool without_move) 
+#define GAME_UPDATE_FUNC(name) void name(game_state *gamestate, input_state *inputs, double dts, int32 without_move) 
 typedef GAME_UPDATE_FUNC(game_update_func);
 
 #define GAME_RENDER_FUNC(name) void name(game_state *gamestate, double alpha)
@@ -58,11 +60,13 @@ SH_API void add_to_named_objects(game_state *gs, game_object *object);
 SH_API void remove_from_grid_elem(object_bucket_list *list, object_bucket **bucket_ptr);
 SH_API int find_grid_index(game_grid *grid, vec2 position);
 
-SH_API void render_grid(game_grid *grid, int pos_attrib, int transform_att, int color_attrib);
+SH_API void render_grid(game_state *gs);
 SH_API void render_grid_elem(grid_element *grid_elem, int pos_attrib, int transform_att, int color_att);
+SH_API void render_draw_stack(game_state *gamestate);
+SH_API void render_draw_stack(game_state *gs, draw_stack *stack);
+SH_API void render_game_object(game_state *gs, game_object *gm_obj);
 
 SH_API void move_bucket_elem_to_grid(game_state *gs, object_bucket *mvd_obj_bucket, int from_index, int to_index);
-
 
 SH_API object_bucket* in_grid_element(grid_element *elem, game_object *object);
 SH_API int is_bucket_in_list(object_bucket_list *list, object_bucket *bucket);
@@ -130,6 +134,7 @@ struct rect_object {
 
 struct line_object {
     sh_line *line;       
+    vec2 normal;
 };
 
 struct objects {
@@ -201,10 +206,15 @@ struct draw_stack {
     int capacity;
 };
 
-draw_element sh_draw_rect(vec2 pos, float width, float height, vec4 color);
-draw_element sh_draw_circ(vec2 pos, float r, vec4 color);
+draw_element sh_gen_draw_rect(vec2 pos, float width, float height, vec4 color);
+draw_element sh_gen_draw_rect_fill(vec2 pos, float width, float height, vec4 color);
+draw_element sh_gen_draw_circ(vec2 pos, float r, vec4 color);
+draw_element sh_gen_draw_line(vec2 a, vec2 b, vec4 color);
+draw_element sh_gen_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color);
+
+
 void push_draw_element(draw_stack *stack, draw_element elem);
-void push_draw_text(char *text, int font_size, vec2 position);
+void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color);
 int pop_element(draw_stack *stack, draw_element *draw);
 
 void make_stack_capacity(draw_stack *stack, int new_capacity); 
@@ -238,6 +248,7 @@ struct game_state {
     game_init_func   *init;
     game_debug_func  *debug_func;
     sh_ui_state      ui_state;
+    sh_debug_ui_state debug_ui_state;
     draw_stack       renderstack;
     sh_fnt           font;
     uint32           fnt_tex;
