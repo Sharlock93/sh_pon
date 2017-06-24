@@ -1,5 +1,5 @@
 #include "../header/game_debug.h"
-// #include <stdio.h>
+#include <stdio.h>
 
 void sh_memcpy(uint8 *dest_mem, uint8 *source, uint32 bytes_to_cpy) {
     while(bytes_to_cpy--) {
@@ -211,5 +211,13 @@ char* sh_vec2tstr(vec2 *vec) {
     static char buffer[64] = {};
     sprintf_s(buffer, 64, "vec2(%.3f, %.3f)", vec->x, vec->y);
     return buffer;
+}
+
+void write_to_log(game_state *gs, char *str) {
+    fputs(str, gs->log_file);
+}
+
+void write_to_gl_log(char *str) {
+    fputs(str, gl_log_file);
 }
 

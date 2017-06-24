@@ -315,11 +315,16 @@ void free_objects_all(game_state *gs) {
     gs->object_count = 0;
 }
 
+GAME_DEBUG_FUNC(clean_up) {
+    fclose(gl_log_file);
+}
+
 
 GAME_INIT_FUNC(init) {
 
     glfwMakeContextCurrent(gamestate->window);
     gl_game_state = gamestate;
+    fopen_s(&gl_log_file, "log_2.txt", "w");
 
     int size = 0;
     char *file = shareadfile("sh_font.fnt", &size);
@@ -374,14 +379,14 @@ GAME_INIT_FUNC(init) {
         init_grid_elem(&gamestate->overlord, i, vec4(1, 1, 1, 1));
     }
 
-    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-20, 0), vec2(20, 0), vec4(1, 0, 0, 1)), true);
+    add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(0, 0), vec2(40, 0), vec4(1, 0, 0, 1)), true);
     // add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-230, -250), vec2(250, 250), vec4(1, 0, 0, 1)), true);
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-248, -250), vec2(-248,  250), vec4(1, 0, 0, 1)), true); //Left
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2( 248, -250), vec2( 248,  250), vec4(1, 0, 0, 1)), true); //right
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250,  248), vec2( 250,  248), vec4(1, 0, 0, 1)), true); //top
     add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-250, -248), vec2( 250, -248), vec4(1, 0, 0, 1)), true); //bottom
     //
-    game_object *testing_object = make_sh_circle(gen_id(), 0, -100, 10, 300, vec2(0, 1), vec4(1, 0, 0, 1));
+    game_object *testing_object = make_sh_circle(gen_id(), -24.836, 4.860, 20, 300, vec2(1.323, 0.4999), vec4(1, 0, 0, 1));
     ball_object *ball = (ball_object *) testing_object->obj;
     add_to_grid_objects(gamestate, testing_object , false); 
 

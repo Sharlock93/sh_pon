@@ -47,7 +47,8 @@ typedef GAME_RENDER_FUNC(game_render_func);
 typedef GAME_INIT_FUNC(game_init_func);
 
 #define GAME_DEBUG_FUNC(name) void name(game_state *gamestate)
-typedef GAME_INIT_FUNC(game_debug_func);
+typedef GAME_DEBUG_FUNC(game_debug_func);
+
 
 SH_API void init_grid(game_grid *grid, float grid_width, float grid_height, int row, int col, vec2 pos);
 SH_API void init_grid_elem(game_grid *grid, int index, vec4 color);
@@ -247,11 +248,13 @@ struct game_state {
     game_render_func *render;
     game_init_func   *init;
     game_debug_func  *debug_func;
+    game_debug_func  *clean_up_func;
     sh_ui_state      ui_state;
     sh_debug_ui_state debug_ui_state;
     draw_stack       renderstack;
     sh_fnt           font;
     uint32           fnt_tex;
+    FILE             *log_file;
 
     input_state      *inputs;
     game_state       *debug_state; //Note(sharo): a gamestate would debug this state

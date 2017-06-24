@@ -75,6 +75,8 @@ struct game_state;
 
 void render_rect(vec2 pos, float width, float height, vec4 color, int vpos_attrib, int color_attrib);
 int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 color);
+void write_to_log(game_state *gs, char *str);
+void write_to_gl_log(char *str);
 // int sh_button_circ(game_state *gs, unsigned int id, vec2 position, char *text, float r);
 
 #endif

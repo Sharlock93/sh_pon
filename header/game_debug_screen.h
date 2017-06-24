@@ -3,3 +3,4 @@
 extern "C" __declspec(dllexport) GAME_RENDER_FUNC(render);
 extern "C" __declspec(dllexport) GAME_UPDATE_FUNC(update);
 extern "C" __declspec (dllexport) GAME_INIT_FUNC(init);
+extern "C" __declspec (dllexport) GAME_DEBUG_FUNC(clean_up);

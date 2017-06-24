@@ -205,6 +205,7 @@ void load_game_dll(game_state *gstate, char *source_name, char *temp_name) {
         gstate->render = (game_render_func *) GetProcAddress(gstate->lib, "render");
         gstate->init = (game_init_func *) GetProcAddress(gstate->lib, "init");
         gstate->debug_func = (game_debug_func *) GetProcAddress(gstate->lib, "debug_func");
+        gstate->clean_up_func = (game_debug_func *) GetProcAddress(gstate->lib, "clean_up");
         gstate->is_init = 0;
     } else {
         gstate->update = game_update_stub;
@@ -267,9 +268,9 @@ int main(int argc, char ** argv) {
     int n_key_state = 0;
     int m_key_state = 0;
     int frame_to_sim = 0;
-    int pause = 1;
+    int pause = 0;
     int current_pause_state = pause;
-
+        
     while(run) {
         previous_time = current_time; 
         current_time = glfwGetTime();
@@ -330,7 +331,7 @@ int main(int argc, char ** argv) {
 
         double passed_in = min(frame_time, dt);
         gamestate.update(&gamestate, &inputs_state, passed_in, pause);
-        gamestate2.update(&gamestate, &inputs_state, passed_in, false);
+        gamestate2.update(&gamestate2, &inputs_state, passed_in, false);
         pause = current_pause_state;
         // total_time -= dt; 
         // }
@@ -342,6 +343,9 @@ int main(int argc, char ** argv) {
 
         glfwPollEvents(); 
     }
+
+    gamestate.clean_up_func(&gamestate);
+    gamestate2.clean_up_func(&gamestate2);
     
     // glfwDestroyWindow(window);
     return 0;

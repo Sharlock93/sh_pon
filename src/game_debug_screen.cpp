@@ -31,6 +31,7 @@ GAME_RENDER_FUNC(render) {
             case BALL:
                 ball_object *ball = (ball_object *)db_ui->hot_object->obj;
                 push_draw_text(gamestate, sh_vec2tstr(&ball->circ->_position), 20, vec2(0, 0), vec4(1, 1, 0, 1));
+                push_draw_text(gamestate, sh_vec2tstr(&ball->circ->_direction), 20, vec2(0, 20), vec4(1, 1, 0, 1));
                 break;
         }
 
@@ -41,6 +42,11 @@ GAME_RENDER_FUNC(render) {
             case BALL:
                 ball_object *ball = (ball_object *)db_ui->active_object->obj;
                 push_draw_text(gamestate, sh_vec2tstr(&ball->circ->_position), 20, vec2(0, -40), vec4(1, 0, 0, 1));
+                push_draw_text(gamestate, sh_vec2tstr(&ball->circ->_direction), 20, vec2(0, -20), vec4(1, 0, 0, 1));
+                write_to_gl_log(sh_vec2tstr(&ball->circ->_direction));
+                write_to_gl_log("  ");
+                write_to_gl_log(sh_vec2tstr(&ball->circ->_position));
+                write_to_gl_log("\n");
                 break;
         }
 
@@ -54,9 +60,14 @@ GAME_UPDATE_FUNC(update) {
 
 }
 
+GAME_DEBUG_FUNC(clean_up) {
+    fclose(gl_log_file);
+}
+
 GAME_INIT_FUNC(init) {
     glfwMakeContextCurrent(gamestate->window);
-
+    fopen_s(&gl_log_file, "log.txt", "w");
+    
     int size = 0;
     char *file = shareadfile("sh_font.fnt", &size);
 

@@ -2,6 +2,7 @@
 #include <iostream>
 
 game_state *gl_game_state = nullptr;
+FILE *gl_log_file = nullptr;
 
 void init_grid(game_grid *grid, float grid_width, float grid_height, int row, int col, vec2 pos) {
 
