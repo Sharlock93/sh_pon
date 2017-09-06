@@ -1,0 +1,84 @@
+@echo off
+set CommandPromptType=Native
+set DevEnvDir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\
+set ExtensionSdkDir=C:\Program Files (x86)\Microsoft SDKs\Windows Kits\10\ExtensionSDKs
+set Framework40Version=v4.0
+set FrameworkDir=C:\Windows\Microsoft.NET\Framework64\
+set FrameworkDir64=C:\Windows\Microsoft.NET\Framework64\
+set FrameworkVersion=v4.0.30319
+set FrameworkVersion64=v4.0.30319
+
+set INCLUDE=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\ATLMFC\include;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\include;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Windows Kits\10\include\10.0.15063.0\ucrt;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Windows Kits\10\include\10.0.15063.0\shared;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Windows Kits\10\include\10.0.15063.0\um;
+set INCLUDE=%INCLUDE%;C:\Program Files (x86)\Windows Kits\10\include\10.0.15063.0\winrt;
+
+set LIB=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\ATLMFC\lib\x64;
+set LIB=%LIB%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\lib\x64;
+set LIB=%LIB%;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\lib\um\x64;
+set LIB=%LIB%;C:\Program Files (x86)\Windows Kits\10\lib\10.0.15063.0\ucrt\x64;
+set LIB=%LIB%;C:\Program Files (x86)\Windows Kits\10\lib\10.0.15063.0\um\x64;
+
+set LIBPATH=%LIBPATH%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\ATLMFC\lib\x64;
+set LIBPATH=%LIBPATH%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\lib\x64;
+set LIBPATH=%LIBPATH%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\lib\x86\store\references;
+set LIBPATH=%LIBPATH%;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.15063.0\;
+set LIBPATH=%LIBPATH%;C:\Program Files (x86)\Windows Kits\10\References\10.0.15063.0\;
+set LIBPATH=%LIBPATH%;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;
+
+set NETFXSDKDir=C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\
+
+set Path=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\bin\HostX64\x64;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCPackages;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\TestWindow;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\CommonExtensions\Microsoft\TeamFoundation\Team Explorer;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\bin\Roslyn;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Team Tools\Performance Tools;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\Shared\Common\VSPerfCollectionTools\;
+set Path=%Path%;C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\;
+set Path=%Path%;C:\Program Files (x86)\Windows Kits\10\bin\x64;
+set Path=%Path%;C:\Program Files (x86)\Windows Kits\10\bin\10.0.15063.0\x64;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\\MSBuild\15.0\bin;
+set Path=%Path%;C:\Windows\Microsoft.NET\Framework64\v4.0.30319;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\;
+set Path=%Path%;C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\;
+set Path=%Path%;C:\Windows\system32;
+set Path=%Path%;C:\Windows;
+set Path=%Path%;C:\Windows\System32\Wbem;
+set Path=%Path%;C:\Windows\System32\WindowsPowerShell\v1.0\;
+set Path=%Path%;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;
+set Path=%Path%;S:\Code\libs\lib\include\Shar\build-win\dll;
+set Path=%Path%;S:\Code\libs\lib\include\Shar\exlib\glew;
+set Path=%Path%;S:\Code\libs\lib\include\Shar\exlib\glfw;
+set Path=%Path%;C:\WINDOWS\system32;
+set Path=%Path%;C:\WINDOWS;
+set Path=%Path%;C:\WINDOWS\System32\Wbem;
+set Path=%Path%;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;
+
+set Platform=x64
+set UCRTVersion=10.0.15063.0
+set UniversalCRTSdkDir=C:\Program Files (x86)\Windows Kits\10\
+set VCIDEInstallDir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\
+set VCINSTALLDIR=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\
+set VCToolsInstallDir=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.11.25503\
+set VisualStudioVersion=15.0
+set VS150COMNTOOLS=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\
+set VSCMD_ARG_app_plat=Desktop
+set VSCMD_ARG_HOST_ARCH=x64
+set VSCMD_ARG_TGT_ARCH=x64
+set VSCMD_VER=15.0.26730.12
+set VSINSTALLDIR=C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\
+set WindowsLibPath=C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.15063.0\;C:\Program Files (x86)\Windows Kits\10\References\10.0.15063.0\
+set WindowsSdkBinPath=C:\Program Files (x86)\Windows Kits\10\bin\
+set WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\
+set WindowsSDKLibVersion=10.0.15063.0\
+set WindowsSdkVerBinPath=C:\Program Files (x86)\Windows Kits\10\bin\10.0.15063.0\
+set WindowsSDKVersion=10.0.15063.0\
+set WindowsSDK_ExecutablePath_x64=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\
+set WindowsSDK_ExecutablePath_x86=C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\
+set __DOTNET_ADD_64BIT=1
+set __DOTNET_PREFERRED_BITNESS=64
+set __VSCMD_PREINIT_PATH=C:\Program Files (x86)\Microsoft Office\DOCRECRYPT;C:\Program Files (x86)\Syncplay;C:\Users\Sharo\AppData\Local\NASM;C:\Python27\;C:\Python27\Scripts;C:\ProgramData\Oracle\Java\javapath;C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPowerShell\v1.0\;C:\Program Files\Git\cmd;C:\Program Files (x86)\Windows Kits\10\Windows Performance Toolkit\;C:\Users\Sharo\AppData\Local\Programs\Python\Python35;S:\Code\libs\lib\include\Shar\build-win\dll;S:\Code\libs\lib\include\Shar\exlib\glew;S:\Code\libs\lib\include\Shar\exlib\glfw;C:\gnuwin32\bin;C:\Program Files (x86)\NVIDIA Corporation\PhysX\Common;C:\Program Files (x86)\Bitvise SSH Client;C:\Program Files\qemu;C:\Program Files (x86)\cdrtools;C:\Program Files (x86)\Gource\cmd;C:\ProgramData\chocolatey\bin;C:\Program Files\OpenSSH-Win64;C:\mingw64\bin;C:\Program Files (x86)\IVI Foundation\VISA\WinNT\Bin\;C:\Program Files\IVI Foundation\VISA\Win64\Bin\;C:\Program Files (x86)\GtkSharp\2.12\bin;C:\Program Files (x86)\Skype\Phone\;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\Program Files\PuTTY\;C:\Program Files\OpenVPN\bin;C:\Program Files\CMake\bin;C:\Ruby23-x64\bin;C:\Users\Sharo\AppData\Local\Programs\Python\Python35\Scripts\;C:\Users\Sharo\AppData\Local\Programs\Python\Python35\;C:\Users\Sharo\AppData\Local\Microsoft\WindowsApps;C:\Program Files (x86)\Nmap;C:\Program Files (x86)\Microsoft VS Code\bin

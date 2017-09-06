@@ -1,8 +1,3 @@
-#include "../header/grid_managment.h"
-#include <iostream>
-
-game_state *gl_game_state = nullptr;
-FILE *gl_log_file = nullptr;
 
 void init_grid(game_grid *grid, float grid_width, float grid_height, int row, int col, vec2 pos) {
 
@@ -180,6 +175,12 @@ int find_grid_index(game_grid *grid, vec2 position) {
     int col = abs(int((first_elem_left - position.x )/elem_width ));
     int row = abs(int((first_elem_top - position.y)/ elem_height));
 
+    if(col > grid->height_elem_count - 1) col = grid->height_elem_count - 1;
+    if(col < 0) col = 0;
+
+    if(row > grid->width_elem_count - 1) row = grid->width_elem_count - 1;
+    if(row < 0) row = 0;
+
     return row*grid->width_elem_count + col;
 }
 
@@ -257,6 +258,7 @@ void render_draw_stack(game_state *gs) {
     while(pop_element(stack, &draw)) {
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vec2)*(draw.point_count*(1 + draw.has_texture)), draw.points, GL_DYNAMIC_DRAW);
+        glEnableVertexAttribArray(vpos);
         glVertexAttribPointer(vpos, 2, GL_FLOAT, GL_FALSE, 0, 0);
 
         if(draw.has_texture) {
@@ -516,6 +518,48 @@ draw_element sh_gen_draw_circ(vec2 pos, float r, vec4 color) {
     elem.color = color;
 
     return elem;
+}
+
+
+draw_element sh_gen_draw_triangle(vec2 pos, float height, float width, int triangle_poining, vec4 color) {
+        draw_element elem = {};
+        elem.points = (vec2 *) malloc(sizeof(vec2)*3);
+        elem.point_count = 3;
+        elem.command = GL_TRIANGLES;
+        elem.color = color;
+
+        vec2 base1(0, 0);
+        vec2 base2(0, 0);
+        vec2 tip(0, 0);
+
+        switch(triangle_poining) {
+                case 0:
+                        base1 = vec2(pos.x - width/2.0, pos.y - height/2.0);
+                        base2 = vec2(pos.x + width/2.0, pos.y - height/2.0);
+                        tip = vec2(pos.x, pos.y + height/2.0);
+                        break;
+                case 1:
+                        base1 = vec2(pos.x - width/2.0, pos.y + height/2.0);
+                        base2 = vec2(pos.x - width/2.0, pos.y - height/2.0);
+                        tip = vec2(pos.x + width/2.0, pos.y);
+                        break;
+                case 2:
+                        base1 = vec2(pos.x + width/2.0, pos.y + height/2.0);
+                        base2 = vec2(pos.x - width/2.0, pos.y + height/2.0);
+                        tip = vec2(pos.x, pos.y - height/2.0);
+                        break;
+                case 3:
+                        base1 = vec2(pos.x + width/2.0, pos.y - height/2.0);
+                        base2 = vec2(pos.x + width/2.0, pos.y + height/2.0);
+                        tip = vec2(pos.x - width/2.0, pos.y);
+                        break;
+        };
+
+        elem.points[0] = base1;
+        elem.points[1] = tip; 
+        elem.points[2] = base2;
+
+        return elem;
 }
 
 draw_element sh_gen_draw_line(vec2 a, vec2 b, vec4 color) {

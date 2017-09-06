@@ -1,5 +1,3 @@
-#include "../header/sh_png_reader.h"
-
 uint32 sh_png_paeth_defilter(int32 a, int32 b, int32 c) {
     int32 p = a + b - c;
     int32 pa = sh_abs( p - a );
@@ -434,16 +432,6 @@ uint8* sh_load_png_mem(uint8 *mem, uint32 mem_size, int32 *x, int32 *y) {
     while(read_chunks) { 
         chunks[i] = sh_png_read_chunk(memory);
         
-        // if(sh_streq((char *)&chunks[i].head , "IHDR", 4)) {
-        //     ihdr = sh_png_read_ihdr(chunks + i); 
-        // }
-        //
-        // if(sh_streq((char *) &chunks[i].head, "IDAT", 4)) {
-        //     sh_zlib_block zlib_block = sh_read_zlib_block(chunks[i].data, chunks[i].len);
-        //     uint8 *data = sh_decompress_png_deflate(&zlib_block);
-        //     image = sh_defilter_png(data, &ihdr);
-        // }
-
         if(sh_streq((char *) &chunks[i].head , "IEND", 4)) {
             read_chunks = 0;
         }
@@ -478,11 +466,11 @@ uint8* sh_load_png_mem(uint8 *mem, uint32 mem_size, int32 *x, int32 *y) {
     uint8 *data = sh_decompress_png_deflate(&strum);
     image = sh_defilter_png(data, &ihdr);
 
-    while(--chunk_nums >= 0) {
-        free(chunks[chunk_nums].data);
-    }
+    // while(--chunk_nums >= 0) {
+    //     free(chunks[chunk_nums].data);
+    // }
 
-    free(chunks);
+    // free(chunks);
 
     *x = ihdr.x;
     *y = ihdr.y;

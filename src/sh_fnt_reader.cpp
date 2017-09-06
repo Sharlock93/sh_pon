@@ -1,5 +1,3 @@
-#include "../header/sh_fnt_reader.h"
-
 
 float sh_get_scale_for_pixel(sh_fnt *font, int font_size) {
     return (float)font_size/-font->info.size; 

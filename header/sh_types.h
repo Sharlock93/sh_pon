@@ -12,9 +12,4 @@ typedef __int16 int16;
 typedef __int32 int32;
 typedef __int64 int64;
 
-
-struct sh_string {
-    char *str;
-    uint32 length;
-};
 #endif

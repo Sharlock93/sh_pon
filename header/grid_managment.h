@@ -1,19 +1,6 @@
 #ifndef GRID_MANAGMENT_H
 #define GRID_MANAGMENT_H
 
-#include <shar.h>
-#include <sharfunc.h>
-#include <sh_circle.h>
-#include <sh_line.h> 
-#include <Windows.h>
-#ifndef SH_SHAPES
-#include <sh_rect.h>
-#endif
-
-#include "../header/sh_types.h"
-#include "../header/game_debug.h"
-#include "../header/sh_fnt_reader.h"
-
 #define HELLO
 #undef SH_API
 #define SH_API __declspec(dllexport)
@@ -21,6 +8,8 @@
 #define dt (double)(1.0/60.0)
 #define Assert(condtion) if(!(condtion)) {*(int *)0 = 0;}
 #define INDEX(row, col, stride) ((row*stride) + col)
+
+
 
 struct game_object;
 struct ball_object;
@@ -36,6 +25,11 @@ struct grid_element;
 struct game_grid;
 struct game_state;
 struct draw_stack;
+struct draw_element;
+struct sh_ui_state;
+
+game_state *gl_game_state = nullptr;
+FILE *gl_log_file = nullptr;
 
 #define GAME_UPDATE_FUNC(name) void name(game_state *gamestate, input_state *inputs, double dts, int32 without_move) 
 typedef GAME_UPDATE_FUNC(game_update_func);
@@ -77,6 +71,14 @@ SH_API game_object* make_sh_line(int id, vec2 a, vec2 b, vec4 color);
 SH_API game_object* make_sh_circle(int id, float x, float y, float radius, float velocity, vec2 direction, vec4 color);
 SH_API game_object* make_sh_rect(int id, float x, float y, float velocity, float width, float height, vec4 color);
 
+draw_element sh_gen_draw_rect(vec2 pos, float width, float height, vec4 color);
+draw_element sh_gen_draw_rect_fill(vec2 pos, float width, float height, vec4 color);
+draw_element sh_gen_draw_circ(vec2 pos, float r, vec4 color);
+draw_element sh_gen_draw_line(vec2 a, vec2 b, vec4 color);
+draw_element sh_gen_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color);
+draw_element sh_gen_triangle(vec2 pos, float height, float width, int triangle_poining, vec4 color);
+draw_element sh_gen_draw_triangle(vec2 pos, float height, float width, int triangle_poining, vec4 color);
+
 #undef SH_API
 #define SH_API
 enum  object_type {
@@ -117,7 +119,7 @@ struct  game_object {
 
 };
 
-struct  ball_object {
+sh_inspect struct  ball_object {
     int        vec_nums;
     int        vec_capacity;
     float      velocity;
@@ -207,26 +209,18 @@ struct draw_stack {
     int capacity;
 };
 
-draw_element sh_gen_draw_rect(vec2 pos, float width, float height, vec4 color);
-draw_element sh_gen_draw_rect_fill(vec2 pos, float width, float height, vec4 color);
-draw_element sh_gen_draw_circ(vec2 pos, float r, vec4 color);
-draw_element sh_gen_draw_line(vec2 a, vec2 b, vec4 color);
-draw_element sh_gen_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 position, vec4 color);
-
-
 void push_draw_element(draw_stack *stack, draw_element elem);
 void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color);
 int pop_element(draw_stack *stack, draw_element *draw);
-
 void make_stack_capacity(draw_stack *stack, int new_capacity); 
 
-struct game_state {
+sh_inspect struct game_state {
     HMODULE lib;
     FILETIME last_write_time;
 
     vec2 window_width_height;
     
-    unsigned int current_vao;
+    uint32 current_vao;
     int object_count;
     int current_program;
     int vpos_attrib_loc;
@@ -243,7 +237,6 @@ struct game_state {
     objects          *static_objects;
     GLFWwindow       *window;
 
-    
     game_update_func *update;
     game_render_func *render;
     game_init_func   *init;

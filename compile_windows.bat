@@ -2,7 +2,8 @@
 pushd buildwin
 
 del *.pdb 2> NUL
-call "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/vcvarsall.bat" x64
+@rem call "C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/VC/Auxiliary/Build/vcvarsall.bat" x64
+call "../compile_env.bat"
 
 set CommonLinkers=/INCREMENTAL:NO /OPT:REF 
 set CommonCompilerFlags=/MT /nologo /Gm- /GR- /EHsc- /EHa- /Od /Oi /W4 /wd4505 /wd4305 /wd4244 /wd4456 /wd4201 /wd4100 /wd4189 /wd4310 /wd4245 /FC /Zi /WL
@@ -13,8 +14,13 @@ set IncludeHeaderDir= /I ..\header %ExternelHeadersDir%
 set LibDirectory=/LIBPATH:S:/Code/libs/lib/include/Shar/build-win/lib /LIBPATH:S:/Code/libs/lib/include/Shar/exlib/glfw /LIBPATH:S:/Code/libs/lib/include/Shar/exlib/glew
 
 
+cl %CommonCompilerFlags% ../src/sh_parse.cpp %IncludeHeaderDir% /link %CommonLinkers% /PDB:sh_parse.pdb
+pushd ..
+call "buildwin/sh_parse.exe"
+popd
+
 cl %CommonCompilerFlags% ../src/game_logic.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_logic%TIME_STAMP%.pdb %CommonLinkers%
-cl %CommonCompilerFlags% ../src/game_debug_screen.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_debug_screen%TIME_STAMP%.pdb %CommonLinkers%
+cl %CommonCompilerFlags% ../src/game_debug_screen.cpp %IncludeHeaderDir% %Libs% /LD /link %LibDirectory% /PDB:game_debug_screen%TIME_STAMP%.pdb %CommonLinkers%
 cl %CommonCompilerFlags% ../src/main.cpp %IncludeHeaderDir%  %Libs% /link %LibDirectory% %CommonLinkers% 
 
 popd

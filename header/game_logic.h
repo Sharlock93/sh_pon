@@ -1,6 +1,5 @@
 #ifndef GAME_LOGIC_H
 #define GAME_LOGIC_H
-#include <shar.h>
 
 //Note(sharo): typedefs
 typedef float real32;
@@ -24,4 +23,5 @@ extern "C" __declspec(dllexport) GAME_DEBUG_FUNC(clean_up);
 int gen_id(); //@Note(sharo): this will just generate an id
 void update_object_grid_relation(game_grid *grid, game_object *object);
 int collision(grid_element *elem, game_object *object);
+
 #endif

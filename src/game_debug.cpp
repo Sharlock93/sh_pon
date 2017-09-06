@@ -1,6 +1,3 @@
-#include "../header/game_debug.h"
-#include <stdio.h>
-
 void sh_memcpy(uint8 *dest_mem, uint8 *source, uint32 bytes_to_cpy) {
     while(bytes_to_cpy--) {
         *( dest_mem + bytes_to_cpy) = *(source + bytes_to_cpy);
@@ -202,7 +199,7 @@ char* sh_flttstr(float val) {
     // int32 sign = *(int32 *) &val >> 30;
     //
     // exponent -= 127;
-    sprintf_s(buffer, 64, "%.3f\n", val);
+    sprintf_s(buffer, 64, "%.3f", val);
     
     return buffer;
 }
@@ -221,3 +218,124 @@ void write_to_gl_log(char *str) {
     fputs(str, gl_log_file);
 }
 
+sh_rect_container make_text_rect(char *text, vec2 pos, int font_size) {
+        size_t length = strlen(text);
+
+        float width = 0;
+        float height = font_size;
+
+        float scale = sh_get_scale_for_pixel(&gl_game_state->font, font_size);
+
+        for(int32 i = 0; i < length; ++i) {
+                fnt_char *ch = gl_game_state->font.characters + text[i];
+                width += ch->xadvance*scale;
+        }
+
+        pos.x += width/2.0;
+        pos.y += height/2.0;
+
+        sh_rect_container rect = {pos, width, height};
+        push_draw_element(&gl_game_state->renderstack, sh_gen_draw_rect(pos, width, height, vec4(1, 0, 0, 1)));
+        return rect;
+}
+
+
+sh_rect_container get_text_rect(sh_fnt *fnt, int font_size, char *text, vec2 pos) {
+        size_t length = strlen(text);
+        float width = 0;
+        float height = font_size;
+        float scale = sh_get_scale_for_pixel(&gl_game_state->font, font_size);
+
+        for(int32 i = 0; i < length; ++i) {
+                fnt_char *ch = fnt->characters + text[i];
+                width += ch->xadvance*scale;
+        }
+
+        pos.x += width/2.0;
+        pos.y += height/2.0;
+
+        sh_rect_container rect = {pos, width, height};
+        return rect;
+}
+
+int32 has_mouse_hovered_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos) {
+        vec2 mouse_point(input->mouse.mouse_x, input->mouse.mouse_y);
+        sh_rect_container rect = get_text_rect(fnt, font_size, text, pos);
+        return point_in_rect(&mouse_point, &rect);
+}
+
+int32 has_mouse_clicked_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos) {
+        vec2 mouse_point(input->mouse.mouse_x, input->mouse.mouse_y);
+        sh_rect_container rect = get_text_rect(fnt, font_size, text, pos);
+        return point_in_rect(&mouse_point, &rect) && input->mouse.left_button;
+}
+
+#ifdef GAME_DEBUG_SCREEN_H
+
+int32 is_left_mouse_button_down() {
+        input_state *input = gl_game_state->debug_state->inputs;
+        return input->mouse.left_button;
+}
+
+void dump_struct_to_screen(void *data, struct_meta_info *meta, int meta_count, int font_size, vec2 *pos) {
+        input_state *input = gl_game_state->debug_state->inputs;
+        if(!is_left_mouse_button_down() && interacting_with_variable) {
+                interacting_with_variable = false;
+                global_active_variable = nullptr;
+        }
+
+        for(int i = 0; i < meta_count; ++i) {
+                vec4 color(1, 1, 1, 1);
+                char buffer[256] = {};
+                struct_meta_info member = meta[i];
+                char *m = static_cast<char *>(data) + member.offset;
+                switch(member.type) {
+                        case type_uint32:
+                                sprintf_s(buffer, "%s : %d", member.name, *reinterpret_cast<uint32 *>(m));
+                                break;
+                        case type_int:
+                                sprintf_s(buffer, "%s : %d", member.name, *reinterpret_cast<int *>(m));
+                                break;
+                        case type_float:
+                                sprintf_s(buffer, "%s : %f", member.name, *reinterpret_cast<float *>(m));
+                                break;
+                        case type_vec2: {
+                                vec2 *vec = reinterpret_cast<vec2 *>(m);
+                                sprintf_s(buffer, "%s : (x: %f, y: %f)", member.name, vec->x, vec->y);
+                        } break; 
+                        case type_sh_circle:
+                                sh_circle *circ = *reinterpret_cast<sh_circle **>(m);
+                                //pos->y -= font_size;
+                                pos->x += font_size;
+                                if(member.flags & meta_pointer) {
+                                        dump_struct_to_screen(static_cast<void *>(circ), class_sh_circle , array_count(class_sh_circle), font_size, pos);
+                                }
+                                pos->x -= font_size;
+                                //pos->y += font_size;
+                                break;
+                }
+
+                if(member.flags & meta_pointer) {
+                        // sprintf_s(buffer, "%s is a pointer %d", member.name, member.type);
+                }
+
+                if(buffer[0] != 0) {
+                        if(has_mouse_hovered_text(&gl_game_state->font, input, buffer, font_size, *pos) && !interacting_with_variable) {
+                                global_hot_variable = static_cast<void *>(m);
+                                if(is_left_mouse_button_down() && !interacting_with_variable) {
+                                        global_active_variable = static_cast<void *>(m);
+                                        global_active_variable_type = member.type;
+                                        interacting_with_variable = true;
+                                }
+                        } 
+
+                        if(global_hot_variable == static_cast<void *>(m)) color = vec4(1, 0, 0, 1);
+                        if(global_active_variable == (void *)m) color = vec4(1, 1, 0, 1);
+
+                        push_draw_text(gl_game_state, buffer, font_size, *pos, color);
+                        global_hot_variable = nullptr;
+                        pos->y -= font_size;
+                }
+        }
+}
+#endif

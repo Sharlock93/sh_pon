@@ -1,7 +1,5 @@
 #ifndef GAME_DEBUG_H
 #define GAME_DEBUG_H
-#include <intrin.h>
-#include <stdint.h>
 
 #define TIME_BLOCK__(number) debug_timed_block block##number(__COUNTER__, __FILE__,  __FUNCTION__, __LINE__)
 #define TIME_BLOCK_(number) TIME_BLOCK__(number)
@@ -72,11 +70,15 @@ char* sh_flttstr(float val);
 char* sh_vec2tstr(vec2 *vec);
 
 struct game_state;
+struct input_state;
 
 void render_rect(vec2 pos, float width, float height, vec4 color, int vpos_attrib, int color_attrib);
 int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 color);
 void write_to_log(game_state *gs, char *str);
 void write_to_gl_log(char *str);
-// int sh_button_circ(game_state *gs, unsigned int id, vec2 position, char *text, float r);
+void dump_struct_to_screen(void *data, struct_meta_info *meta, int meta_count, int font_size, vec2 *pos);
+int32 has_mouse_clicked_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos);
+int32 has_mouse_hovered_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos);
+sh_rect_container get_text_rect(sh_fnt *fnt, int font_size, char *text, vec2 pos);
 
 #endif

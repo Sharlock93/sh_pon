@@ -1,14 +1,19 @@
+#define sh_inspect
+
 #include <Windows.h>
 #include <iostream>
 #include <sharinit.h>
 #include <sharfunc.h>
 #include <GLFW\glfw3.h>
 #include <sh_circle.h>
-#include "game_logic.cpp"
 #include <sh_rect.h>
 #include <sh_line.h>
+#include <sh_types.h>
+#include <sh_fnt_reader.h>
+#include <sh_debug_meta_info.h>
+#include <game_debug.h>
+#include <grid_managment.h>
 #include <stdio.h>
-
 
 //Note(Sharo): Globals
 #define SCREEN_SIZE_X 500 
@@ -106,6 +111,7 @@ GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
     gamestate->current_program = prog;
     gamestate->full_screen = 0;
     gamestate->window = window;
+    gamestate->window_width_height = vec2(screen_width, screen_height);
 
     glUseProgram(prog);
     GLuint vao;
@@ -256,9 +262,10 @@ int main(int argc, char ** argv) {
 
     bool run = true;
     glfwSetTime(0);
-    glfwSwapInterval(0);
+    // glfwSwapInterval(0);
     glfwMakeContextCurrent(gamestate.window);
     glUseProgram(gamestate.current_program);
+    glfwFocusWindow(gamestate.window);
 
     double current_time = glfwGetTime();
     double previous_time = current_time;
@@ -268,8 +275,10 @@ int main(int argc, char ** argv) {
     int n_key_state = 0;
     int m_key_state = 0;
     int frame_to_sim = 0;
-    int pause = 0;
+    int pause = 1;
     int current_pause_state = pause;
+
+    // toggle_fullscreen(&gamestate, gamestate.window);
         
     while(run) {
         previous_time = current_time; 
@@ -329,7 +338,7 @@ int main(int argc, char ** argv) {
             frame_to_sim = 0;
         }
 
-        double passed_in = min(frame_time, dt);
+        double passed_in = 1.0/60.0;
         gamestate.update(&gamestate, &inputs_state, passed_in, pause);
         gamestate2.update(&gamestate2, &inputs_state, passed_in, false);
         pause = current_pause_state;
