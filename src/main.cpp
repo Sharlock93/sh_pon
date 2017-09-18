@@ -43,8 +43,8 @@ static void toggle_fullscreen(game_state *gm, GLFWwindow *window) {
 }
 
 static void mouse_pos(GLFWwindow *window, double x, double y) {
-    inputs_state.mouse.mouse_x = x - 250;
-    inputs_state.mouse.mouse_y = 250 - y;
+    inputs_state.mouse.mouse_x = x;
+    inputs_state.mouse.mouse_y = y;
 }
 
 static void keyboard(GLFWwindow *window, int key, int scancode, int action, int mods) {

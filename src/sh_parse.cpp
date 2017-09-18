@@ -4,6 +4,28 @@
 #include <assert.h>
 #include <string.h>
 
+#define TYPES          \
+        sh_type(int)   \
+        sh_type(float) \
+        sh_type(char)  \
+        sh_type(double)\
+        sh_type(vec2)  \
+        sh_type(void)  \
+
+
+enum {
+#define sh_type(type_name) sh_##type_name,
+        TYPES
+        list_size
+#undef sh_type
+};
+
+char *types[] = {
+ #define sh_type(type_name) #type_name,
+        TYPES
+#undef sh_type
+};
+
 enum sh_token_type {
         sh_open_paran, // (
         sh_close_paran, // )
@@ -22,6 +44,7 @@ enum sh_token_type {
         sh_unknown,
         sh_end_of_stream
 };
+
 
 struct stream_data {
         char *cur;
@@ -57,8 +80,6 @@ struct types_seen {
         types_seen *next;
 };
 
-
-
 types_seen *first_type = nullptr;
 struct_types_seen *first_struct_type = nullptr;
 FILE *sh_generated = nullptr;
@@ -70,16 +91,7 @@ bool type_seen_already(sh_token *struct_token) {
         }
         return result;
 }
-//
-// bool sh_strcmp(char *str1, char *str2) {
-//         while(str1[0] != '\0' && str2[0] != '\0' && (str1[0] == str2[0])){
-//                 ++str1;
-//                 ++str2;
-//         }
-//
-//         if(str1[0] == '\0')
-// }
-//
+
 void add_tok_to_expr(sh_expr *expr, sh_token tok) {
         sh_token_node *new_node = (sh_token_node *) malloc(sizeof(sh_token_node));
         new_node->token = tok;
@@ -285,20 +297,6 @@ void unread_token(stream_data *stream, sh_token *tok) {
         stream->read_so_far -= tok->length;
 }
 
-bool sh_expect_token(stream_data *stream, sh_token_type type, char *token_text = nullptr) {
-        sh_token tok = next_token(stream);
-        bool result = tok.type == type;
-        if(type == sh_identifier && token_text != NULL) {
-                result = result && token_equals(tok.pos, token_text);
-        }
-
-        if(!result) {
-                unread_token(stream, &tok);
-        }
-
-        return result;
-}
-
 sh_token_type peak_next_token(stream_data *stream) {
         sh_token tok = next_token(stream);
         unread_token(stream, &tok);
@@ -334,85 +332,123 @@ void output_expr(sh_expr *expr) {
         printf("\n");
 }
 
-
-// void sh_struct_member_parse(stream_data *stream, sh_token struct_mbr_type, sh_token struct_name) {
-//         bool member_end = 0;
-//         if(!type_seen_already(&struct_mbr_type)) {
-//                 add_new_type(&struct_mbr_type);
-//         }
-//         while(!member_end) {
-//                 sh_token member_property = next_token(stream);
-//                 bool is_member_pointer = false;
-//                 int flags = 0;
-//                 while(member_property.type == sh_asterisk)  {
-//                         is_member_pointer = true;
-//                         member_property = next_token(stream);
-//                 }
-//
-//                 if(is_member_pointer) {
-//                         flags |= 0b1;
-//                 }
-//
-//                 if(member_property.type != sh_semicolon) {
-//                         fprintf(sh_generated, "\t{%d, type_%.*s, \"%.*s\", offsetof(%.*s, %.*s)}",
-//                                 flags,
-//                                 struct_mbr_type.length, struct_mbr_type.pos,
-//                                 member_property.length, member_property.pos,
-//                                 struct_name.length, struct_name.pos,
-//                                 member_property.length, member_property.pos
-//                                 );
-//                 }
-//
-//                 if(member_property.type == sh_semicolon)
-//                         member_end = 1;
-//         }
-// }
-//
-void sh_parse_struct(stream_data *stream) {
-        sh_token struct_name = next_token(stream);
-        if(!struct_type_seen_already(&struct_name)) {
-                add_new_struct_type(&struct_name);
-        }
-
-        fprintf(sh_generated, "struct_meta_info struct_%.*s[] = {\n", struct_name.length, struct_name.pos);
-        if(sh_expect_token(stream, sh_open_brace)) {
-                bool end_struct = 0;
-                while(!end_struct) {
-                        sh_token struct_member = next_token(stream);
-                        if(struct_member.type == sh_comment) continue;
-                        if(struct_member.type == sh_close_brace) {
-                                end_struct = 1;
-                        } else {
-                                sh_struct_member_parse(stream, struct_member, struct_name);
-                                fprintf(sh_generated, ",\n");
-                        }
+int expect_in(sh_token_node *tok_head, sh_token_type type, char **types_text, int types_size) {
+        sh_token tok = tok_head->token;
+        // printf("token type: %.*s\n", tok.length, tok.pos);
+        for(int i = 0; i < types_size; ++i) {
+                if(strncmp(tok.pos, types_text[i], strlen(types_text[i])) == 0)  {
+                        // printf("found a type: %s\n", types_text[i]);
+                        return 1;
                 }
-        } else {
-                printf("open brace was expected");
         }
-        fprintf(sh_generated, "};\n");
+
+        return 0;
 }
 
+int expect(sh_token_node *tok_head, sh_token_type type) {
+        // printf("token: %.*s\n", tok_head->token.length, tok_head->token.pos);
+        return (tok_head->token.type == type);
+}
 
+int expect_func_paramteres(sh_token_node *tok_head) {
+        return 1;
+}
+
+int parse_variable(sh_expr *expr, sh_token class_name) {
+        sh_token_node *temp = expr->tok_head;
+
+        // if(!expect_in(temp, sh_identifier, types, list_size)) {
+        //         return 0;
+        // }
+
+        sh_token var_type = temp->token;
+
+        temp = temp->next;
+        int ptr_lvl = 0;
+        do {
+                if(expect(temp, sh_asterisk)) {
+                        ++ptr_lvl;
+                        temp = temp->next;
+                } else {
+                        break;
+                }
+        } while(temp->token.type == sh_asterisk);
+
+        
+        // temp = temp->next;
+        if(!expect(temp, sh_identifier)) {
+                return 0;
+        }
+        
+        sh_token var_name = temp->token;
+
+        temp = temp->next;
+        if(!expect(temp, sh_semicolon)) {
+                return 0;
+        }
+
+        int is_pointer = 0;
+        if(ptr_lvl) is_pointer = 1;
+
+        fprintf(sh_generated, "\t{%d, type_%.*s, \"%.*s\", offsetof(%.*s, %.*s)},\n",
+                        is_pointer,
+                        var_type.length, var_type.pos,
+                        var_name.length, var_name.pos,
+                        class_name.length, class_name.pos,
+                        var_name.length, var_name.pos
+               );
+
+        if(!type_seen_already(&var_type)) {
+                add_new_type(&var_type);
+        }
+
+        return 1;
+}
+
+int parse_func(sh_expr *expr) {
+        sh_token_node *temp = expr->tok_head;
+        if(!expect_in(temp, sh_identifier, types, list_size)) {
+                // printf("function didn't start with a type\n");
+                return 0;
+        }
+
+        temp = temp->next;
+        if(!expect(temp, sh_identifier)) {
+                // printf("function doesn't have a name\n");
+                return 0;
+        }
+
+        temp = temp->next;
+
+        if(!expect(temp, sh_open_paran)){
+                // printf("function must have an open_paran after name\n");
+                return 0;
+        }  
+
+        temp = temp->next;
+        if(!expect_func_paramteres(temp)) {
+                // printf("function must have parameters after open paran\n");
+                return 0;
+        }
+
+        while(temp && temp->token.type != sh_close_paran)
+                temp = temp->next;
+
+        if(!expect(temp, sh_close_paran)) {
+                // printf("function doesn't have a name\n");
+                return 0;
+        }
+
+        temp = temp->next;
+        if(!expect(temp, sh_semicolon)) {
+                return 0;
+        }
+
+        return 1;
+}
 
 void process_expr(sh_expr *expr, sh_token class_name) {
-        sh_token tok = expr->tok_head->token;
-        if(expr->token_number == 3 && tok.type != sh_comment  && tok.pos[0] != '#') {
-                sh_token member_type = expr->tok_head->token;
-                sh_token member_name = expr->tok_head->next->token;
-
-                if(!type_seen_already(&member_type)) {
-                        add_new_type(&member_type);
-                }
-
-                fprintf(sh_generated, "\t{%d, type_%.*s, \"%.*s\", offsetof(%.*s, %.*s)},\n",
-                        0,
-                        member_type.length, member_type.pos,
-                        member_name.length, member_name.pos,
-                        class_name.length, class_name.pos,
-                        member_name.length, member_name.pos
-                       );
-        }
+        parse_variable(expr, class_name);
 }
 
 void sh_parse_class_members(sh_token class_name, stream_data *stream) {
@@ -446,17 +482,12 @@ void sh_parse_class(stream_data *stream) {
         }
 
         if(cur_token.type == sh_open_brace) {
-
                 sh_parse_class_members(prev_token, stream);
         }
 }
 
 void sh_parse_inspect(stream_data *stream) {
-        if(sh_expect_token(stream, sh_identifier, "struct")) {
-                sh_parse_class(stream);
-        } else if(sh_expect_token(stream, sh_identifier, "class")) {
-                sh_parse_class(stream);
-        }
+        sh_parse_class(stream);
 }
 
 int main(int argc, char ** argv) {

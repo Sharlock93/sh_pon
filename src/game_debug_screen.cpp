@@ -33,14 +33,12 @@ struct tree {
         tree *prev;
 };
 
-
 tree *main_tree = nullptr;
-
 vec2 dump_game_object(game_object *obj, float font_size, vec2 pos) {
         switch (obj->type) {
                 case BALL:
                         ball_object *ball = (ball_object *)obj->obj;
-                        dump_struct_to_screen((void *) ball, struct_ball_object, array_count(struct_ball_object), font_size, &pos);
+                        dump_struct_to_screen((void *) ball, class_ball_object, array_count(class_ball_object), font_size, &pos);
                         break;
         }
 
@@ -51,14 +49,17 @@ void push_draw_tree(tree *passed_tree, input_state *input) {
         vec4 color_tri = vec4(1, 1, 0, 0);
         float height = 10;
         float width  = 10;
-        float font_size = 15;
+        float font_size = 18;
         vec2 pos = vec2(-250 + width/2.0, 230 - height/2.0);
         vec4 color(1, 1, 1, 1);
-        // push_draw_element(&gl_game_state->renderstack, sh_gen_draw_triangle(pos, height, width, 1, color_tri));
+
         pos.x += font_size;
+
+        vec2 mouse_point(input->mouse.mouse_x, input->mouse.mouse_y);
+
         while(passed_tree) {
                 sh_rect_container node_rect = make_text_rect(passed_tree->name, pos, font_size);
-                vec2 mouse_point(input->mouse.mouse_x, input->mouse.mouse_y);
+
                 if(point_in_rect(&mouse_point, &node_rect)) {
                         if(input->mouse.left_button) {
                                 passed_tree->expanded = !passed_tree->expanded;
@@ -70,14 +71,16 @@ void push_draw_tree(tree *passed_tree, input_state *input) {
 
                 push_draw_text(gl_game_state, passed_tree->name, font_size, pos, color);
                 pos.y -= font_size;
+
                 if(passed_tree->expanded && passed_tree->obj) {
-                        (passed_tree->name[0]) = '-';
+                        passed_tree->name[0] = '-';
                         if(passed_tree->obj) {
                                 pos = dump_game_object(passed_tree->obj, font_size, pos);
                         }
                 } else {
-                        (passed_tree->name[0])= '+';
+                        passed_tree->name[0]= '+';
                 }
+
                 passed_tree = passed_tree->next;
         }
 }
@@ -118,6 +121,7 @@ void add_element_to_tree(tree *t, game_object *obj) {
 
 GAME_RENDER_FUNC(render) { 
 
+
     game_state *db = gamestate->debug_state;
     input_state *db_inputs = db->inputs;
     sh_debug_ui_state *db_ui = &db->debug_ui_state;
@@ -147,6 +151,11 @@ GAME_RENDER_FUNC(render) {
             }
 
     }
+
+
+    char buffer[256];
+    sprintf_s(buffer, 64, "%f %f", db_inputs->mouse.mouse_x, db_inputs->mouse.mouse_y);
+    push_draw_text(gl_game_state, buffer, 18, vec2(-220, 220), vec4(1, 1, 1, 1));
 
     push_draw_tree(main_tree, db_inputs);
     render_draw_stack(gamestate);
@@ -209,7 +218,7 @@ GAME_INIT_FUNC(init) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 #endif
 
-    char *name = "root";
+    char *name = "+root";
     main_tree = (tree *)malloc(sizeof(tree));
     main_tree->name = (char *) malloc(strlen(name) + 1);
     strcpy_s(main_tree->name, strlen(name)+1, name);

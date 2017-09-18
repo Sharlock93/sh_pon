@@ -293,34 +293,45 @@ void dump_struct_to_screen(void *data, struct_meta_info *meta, int meta_count, i
                         case type_uint32:
                                 sprintf_s(buffer, "%s : %d", member.name, *reinterpret_cast<uint32 *>(m));
                                 break;
+
                         case type_int:
                                 sprintf_s(buffer, "%s : %d", member.name, *reinterpret_cast<int *>(m));
                                 break;
+
                         case type_float:
                                 sprintf_s(buffer, "%s : %f", member.name, *reinterpret_cast<float *>(m));
                                 break;
+
                         case type_vec2: {
                                 vec2 *vec = reinterpret_cast<vec2 *>(m);
                                 sprintf_s(buffer, "%s : (x: %f, y: %f)", member.name, vec->x, vec->y);
                         } break; 
-                        case type_sh_circle:
+
+                        case type_sh_circle: {
+                                sprintf_s(buffer, "%s: ", member.name);
+                                push_draw_text(gl_game_state, buffer, font_size, *pos, color);
+                                buffer[0] = 0;
+                                pos->y -= font_size;
+
+                                pos->x += font_size*2;
+                                
                                 sh_circle *circ = *reinterpret_cast<sh_circle **>(m);
-                                //pos->y -= font_size;
-                                pos->x += font_size;
+
                                 if(member.flags & meta_pointer) {
                                         dump_struct_to_screen(static_cast<void *>(circ), class_sh_circle , array_count(class_sh_circle), font_size, pos);
                                 }
-                                pos->x -= font_size;
-                                //pos->y += font_size;
-                                break;
+                                pos->x -= font_size*2;
+                        } break;
                 }
 
                 if(member.flags & meta_pointer) {
                         // sprintf_s(buffer, "%s is a pointer %d", member.name, member.type);
                 }
 
+                int focused = glfwGetWindowAttrib(gl_game_state->window, GLFW_FOCUSED);
+
                 if(buffer[0] != 0) {
-                        if(has_mouse_hovered_text(&gl_game_state->font, input, buffer, font_size, *pos) && !interacting_with_variable) {
+                        if((focused) && has_mouse_hovered_text(&gl_game_state->font, input, buffer, font_size, *pos) && !interacting_with_variable) {
                                 global_hot_variable = static_cast<void *>(m);
                                 if(is_left_mouse_button_down() && !interacting_with_variable) {
                                         global_active_variable = static_cast<void *>(m);

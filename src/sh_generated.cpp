@@ -3,6 +3,8 @@ struct_meta_info class_ball_object[] = {
 	{0, type_int, "vec_capacity", offsetof(ball_object, vec_capacity)},
 	{0, type_float, "velocity", offsetof(ball_object, velocity)},
 	{0, type_vec2, "previous_pos", offsetof(ball_object, previous_pos)},
+	{1, type_sh_circle, "circ", offsetof(ball_object, circ)},
+	{1, type_vec2, "vectors", offsetof(ball_object, vectors)},
 };
 struct_meta_info class_game_state[] = {
 	{0, type_HMODULE, "lib", offsetof(game_state, lib)},
@@ -19,11 +21,23 @@ struct_meta_info class_game_state[] = {
 	{0, type_int, "is_init", offsetof(game_state, is_init)},
 	{0, type_int, "full_screen", offsetof(game_state, full_screen)},
 	{0, type_game_grid, "overlord", offsetof(game_state, overlord)},
+	{1, type_game_object, "named_objects", offsetof(game_state, named_objects)},
+	{1, type_objects, "objects_to_update", offsetof(game_state, objects_to_update)},
+	{1, type_objects, "static_objects", offsetof(game_state, static_objects)},
+	{1, type_GLFWwindow, "window", offsetof(game_state, window)},
+	{1, type_game_update_func, "update", offsetof(game_state, update)},
+	{1, type_game_render_func, "render", offsetof(game_state, render)},
+	{1, type_game_init_func, "init", offsetof(game_state, init)},
+	{1, type_game_debug_func, "debug_func", offsetof(game_state, debug_func)},
+	{1, type_game_debug_func, "clean_up_func", offsetof(game_state, clean_up_func)},
 	{0, type_sh_ui_state, "ui_state", offsetof(game_state, ui_state)},
 	{0, type_sh_debug_ui_state, "debug_ui_state", offsetof(game_state, debug_ui_state)},
 	{0, type_draw_stack, "renderstack", offsetof(game_state, renderstack)},
 	{0, type_sh_fnt, "font", offsetof(game_state, font)},
 	{0, type_uint32, "fnt_tex", offsetof(game_state, fnt_tex)},
+	{1, type_FILE, "log_file", offsetof(game_state, log_file)},
+	{1, type_input_state, "inputs", offsetof(game_state, inputs)},
+	{1, type_game_state, "debug_state", offsetof(game_state, debug_state)},
 };
 struct_meta_info class_sh_circle[] = {
 	{0, type_vec2, "_direction", offsetof(sh_circle, _direction)},
