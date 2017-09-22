@@ -406,27 +406,32 @@ GAME_INIT_FUNC(init) {
 
         // add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(0, 0), vec2(40, 0), vec4(1, 0, 0, 1)), true);
         // add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-230, -250), vec2(250, 250), vec4(1, 0, 0, 1)), true);
-        add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-half_width,  half_height), vec2(-half_width, -half_height), vec4(1, 0, 0, 1)), true); //Left
+        
+	add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2(-half_width,  half_height), vec2(-half_width, -half_height), vec4(1, 0, 0, 1)), true); //Left
         add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2( half_width,  half_height), vec2( half_width, -half_height), vec4(1, 0, 0, 1)), true); //right
         add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2( half_width,  half_height), vec2(-half_width,  half_height), vec4(1, 0, 0, 1)), true); //top
         add_to_grid_objects(gamestate, make_sh_line(gen_id(), vec2( half_width, -half_height), vec2(-half_width, -half_height), vec4(1, 0, 0, 1)), true); //bottom
-        //
+
         // game_object *testing_object = make_sh_circle(gen_id(), -24.836, 4.860, 20, 300, vec2(1.323, 0.4999), vec4(1, 0, 0, 1));
         game_object *testing_object = make_sh_circle(gen_id(), 0, -225, 20, 300, vec2(1, -0.9999), vec4(1, 0, 0, 1));
         ball_object *ball = (ball_object *) testing_object->obj;
         // add_to_grid_objects(gamestate, testing_object , false); 
 
-        for (int i = 45; i < 45; ++i) {
-                game_object *new_object = make_sh_circle(gen_id(), 
-                                sin(i*torad)*cos(i*torad), cos(i*torad)*sin(i*torad),
-                                5, 700,
-                                normalize(vec2(cos(i*torad), sin(i*torad))),
-                                vec4(1, sin(i*torad), cos(i*torad),  1));
-                add_to_grid_objects(gamestate, new_object, false); 
-        }
 
-        gamestate->named_objects[MAIN_BALL] =  make_sh_circle(gen_id(), 0, 0, 5, 400, vec2(0, -1), vec4(1, 0, 0, 1));
-        add_to_grid_objects(gamestate, gamestate->named_objects[MAIN_BALL], false); 
+	game_object *new_object = make_sh_circle_new(gen_id(), 0, 0, 5, 400, vec2(1, 0), vec4(1, 1, 1, 1));
+
+	add_to_grid_objects(gamestate, new_object, false); 
+
+        // for (int i = 45; i < 45; ++i) {
+        //         game_object *new_object = make_sh_circle(gen_id(), 
+        //                         sin(i*torad)*cos(i*torad), cos(i*torad)*sin(i*torad),
+        //                         5, 700,
+        //                         normalize(vec2(cos(i*torad), sin(i*torad))),
+        //                         vec4(1, sin(i*torad), cos(i*torad),  1));
+        // }
+
+        // gamestate->named_objects[MAIN_BALL] =  make_sh_circle(gen_id(), 0, 0, 5, 400, vec2(0, -1), vec4(1, 0, 0, 1));
+        // add_to_grid_objects(gamestate, gamestate->named_objects[MAIN_BALL], false); 
         // gamestate->named_objects[2] =  make_sh_circle(gen_id(), 100, -100, 5, 400, vec2(0, 1), vec4(1, 0, 0, 1));
         // add_to_grid_objects(gamestate, gamestate->named_objects[2], false); 
 
@@ -438,7 +443,6 @@ GAME_INIT_FUNC(init) {
 debug_record records[__COUNTER__ +1];
 
 GAME_DEBUG_FUNC(debug_func) {
-
         static char buffer[256] = {};
         int32 debug_fnt_size = PNT2PXL(17);
         vec2 cursor = vec2(-250, 250 - debug_fnt_size);

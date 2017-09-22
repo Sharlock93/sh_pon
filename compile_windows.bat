@@ -19,8 +19,8 @@ pushd ..
 call "buildwin/sh_parse.exe"
 popd
 
-cl %CommonCompilerFlags% ../src/game_logic.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_logic%TIME_STAMP%.pdb %CommonLinkers%
-cl %CommonCompilerFlags% ../src/game_debug_screen.cpp %IncludeHeaderDir% %Libs% /LD /link %LibDirectory% /PDB:game_debug_screen%TIME_STAMP%.pdb %CommonLinkers%
+rem cl %CommonCompilerFlags% ../src/game_logic.cpp %IncludeHeaderDir%  %Libs%  /LD /link %LibDirectory% /PDB:game_logic%TIME_STAMP%.pdb %CommonLinkers%
+rem cl %CommonCompilerFlags% ../src/game_debug_screen.cpp %IncludeHeaderDir% %Libs% /LD /link %LibDirectory% /PDB:game_debug_screen%TIME_STAMP%.pdb %CommonLinkers%
 cl %CommonCompilerFlags% ../src/main.cpp %IncludeHeaderDir%  %Libs% /link %LibDirectory% %CommonLinkers% 
 
 popd

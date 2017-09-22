@@ -15,6 +15,10 @@
 #include <grid_managment.h>
 #include <stdio.h>
 
+
+#include "sh_math.h"
+#include "sh_circle_new.h"
+
 //Note(Sharo): Globals
 #define SCREEN_SIZE_X 500 
 #define SCREEN_SIZE_Y 500 
@@ -73,9 +77,6 @@ static void mouse_button_call(GLFWwindow *window, int button, int action, int mo
     } else if((button == GLFW_MOUSE_BUTTON_RIGHT) && (action == GLFW_RELEASE)) {
         inputs_state.mouse.right_button = 0;
     }
-
-
-
 }
 
 GLFWwindow* init(game_state *gamestate, int screen_width, int screen_height,
@@ -134,22 +135,10 @@ void load_program_attrib_location(game_state *gamestate) {
     gamestate->has_texture_attrib = glGetUniformLocation(gamestate->current_program, "has_texture");
 }
 
-GAME_UPDATE_FUNC(game_update_stub) {
-
-}
-
-GAME_RENDER_FUNC(game_render_stub) {
-
-}
-
-
-GAME_INIT_FUNC(game_init_stub) {
-
-}
-
-GAME_DEBUG_FUNC(game_debug_stub) {
-
-}
+GAME_UPDATE_FUNC(game_update_stub) { }
+GAME_RENDER_FUNC(game_render_stub) { }
+GAME_INIT_FUNC(game_init_stub) { }
+GAME_DEBUG_FUNC(game_debug_stub) { } 
 
 FILETIME get_last_write_time(char *filename) {
     WIN32_FILE_ATTRIBUTE_DATA fileinfo = {};
@@ -240,14 +229,21 @@ void render_screen(game_state *gs, double alpha) {
 
 
 int main(int argc, char ** argv) {
+	sh_mat4 m = {
+		1, 2, 3, 4, 5, 6, 7, 7, 9, 10, 11, 12, 13, 14, 15, 16
+	};
 
+	printf("%d\n", sizeof(m));
+	printf("%f", m.pm[1][1]);
+	printf("%f", m.x.x);
 
+/*
     game_state gamestate = {};
     game_state gamestate2 = {};
 
     gamestate.inputs = &inputs_state;
-    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 0, 100);
-    GLFWwindow *window2   = init(&gamestate2, SCREEN_SIZE_X, SCREEN_SIZE_Y, "Test", 500, 100);
+    GLFWwindow *window   = init(&gamestate, SCREEN_SIZE_X, SCREEN_SIZE_Y, "sh_pong", 0, 100);
+    GLFWwindow *window2   = init(&gamestate2, SCREEN_SIZE_X, SCREEN_SIZE_Y, "sh_pong_debug", 500, 100);
     load_program_attrib_location(&gamestate);
     load_program_attrib_location(&gamestate2);
 
@@ -357,6 +353,7 @@ int main(int argc, char ** argv) {
     gamestate2.clean_up_func(&gamestate2);
     
     // glfwDestroyWindow(window);
+*/
     return 0;
 }
 
