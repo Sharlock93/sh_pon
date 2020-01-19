@@ -9,8 +9,6 @@
 #define Assert(condtion) if(!(condtion)) {*(int *)0 = 0;}
 #define INDEX(row, col, stride) ((row*stride) + col)
 
-
-
 struct game_object;
 struct ball_object;
 struct rect_object;
@@ -27,6 +25,9 @@ struct game_state;
 struct draw_stack;
 struct draw_element;
 struct sh_ui_state;
+struct sh_phy_force;
+struct sh_col_queue;
+struct sh_col_info;
 
 game_state *gl_game_state = nullptr;
 FILE *gl_log_file = nullptr;
@@ -79,6 +80,16 @@ draw_element sh_gen_draw_text(sh_fnt *fnt, char *text, int font_size, vec2 posit
 draw_element sh_gen_triangle(vec2 pos, float height, float width, int triangle_poining, vec4 color);
 draw_element sh_gen_draw_triangle(vec2 pos, float height, float width, int triangle_poining, vec4 color);
 
+void push_draw_element(draw_stack *stack, draw_element elem);
+void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color);
+int pop_element(draw_stack *stack, draw_element *draw);
+void make_stack_capacity(draw_stack *stack, int new_capacity); 
+
+void sh_col_q_init(sh_col_queue* q, int init_capacity);
+void sh_col_q_push(sh_col_queue* q, sh_col_info sh_col_info);
+sh_col_info sh_col_q_pop(sh_col_queue* q);
+
+
 #undef SH_API
 #define SH_API
 enum  object_type {
@@ -124,25 +135,25 @@ sh_inspect struct  ball_object {
     int        vec_capacity;
     float      velocity;
     vec2       previous_pos;
-    sh_circle *circ;
-    vec2      *vectors;
+    sh_circle* circ;
+    sh_phy_force* forces;
 };
 
 
 struct rect_object {
     vec2    previous_pos;
     float   velocity;
-    sh_rect *rect;
+    sh_rect* rect;
 };
 
-struct line_object {
-    sh_line *line;       
+sh_inspect struct line_object {
+    sh_line* line;       
     vec2 normal;
 };
 
 struct objects {
-     game_object *root_node;
-     game_object *last_node;
+     game_object* root_node;
+     game_object* last_node;
      int         object_count;
 }; 
 
@@ -209,10 +220,29 @@ struct draw_stack {
     int capacity;
 };
 
-void push_draw_element(draw_stack *stack, draw_element elem);
-void push_draw_text(game_state *gs, char *text, int font_size, vec2 position, vec4 color);
-int pop_element(draw_stack *stack, draw_element *draw);
-void make_stack_capacity(draw_stack *stack, int new_capacity); 
+typedef enum {
+    COL_SWP_CIRC_LINE
+} col_type;
+
+struct sh_col_info {
+    bool collied;
+    col_type type;
+    float dt1; // t on which the first object is closest to object 2
+    float dt2; // t on which the second object is closest to object 1
+
+    game_object* o1;
+    game_object* o2;
+};
+
+struct sh_col_queue {
+    int size;
+    int capacity;
+
+    int head;
+    int tail;
+    sh_col_info *q;
+};
+
 
 sh_inspect struct game_state {
     HMODULE lib;
@@ -245,6 +275,7 @@ sh_inspect struct game_state {
     sh_ui_state      ui_state;
     sh_debug_ui_state debug_ui_state;
     draw_stack       renderstack;
+    sh_col_queue     col_queue;
     sh_fnt           font;
     uint32           fnt_tex;
     FILE             *log_file;

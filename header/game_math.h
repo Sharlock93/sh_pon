@@ -7,9 +7,9 @@ vec2 reflect(vec2 &incoming_ray, vec2 &normal);
 
 vec2 get_normal_voroni_region(const vec2 *point, const rect_object *rect);
 
-void col_circ(ball_object *ball, game_object *object, game_state *state);
+sh_col_info col_circ(ball_object *ball, game_object *object, game_state *state);
 void col_rect(rect_object *rect, game_object *object, game_state *state);
-void col_line(line_object *line, game_object *object, game_state *state);
+sh_col_info col_line(line_object *line, game_object *object, game_state *state);
 
 int point_in_rect(vec2 *point, sh_rect_container *rect);
 int point_in_circ(vec2 *point, sh_circ_container *circ);
@@ -35,5 +35,12 @@ int col_circ_circ(ball_object *ball1, ball_object *ball2, vec2 *result = nullptr
 int col_circ_line(ball_object *ball, line_object *line, vec2 *result = nullptr);
 int col_circ_rect(ball_object *ball_obj, rect_object *rect_obj, vec2 *result);
 int col_circ_rect(grid_element *elem, ball_object *ball_obj);
+//
+//
+//
+
+
+int sh_sqdist_seg_seg(vec2, vec2, vec2, vec2, float* s, float* t);
+float sh_circ_line_toi(vec2 p1, vec2 q1, vec2 liine_start, vec2 line_norm, float d);
 
 #endif

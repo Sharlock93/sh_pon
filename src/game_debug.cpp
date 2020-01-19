@@ -349,4 +349,89 @@ void dump_struct_to_screen(void *data, struct_meta_info *meta, int meta_count, i
                 }
         }
 }
+
+
+
 #endif
+
+void dump_object_log(void* data, struct_meta_info* meta, int meta_count, char* var_name) {
+
+	char buffer[256] = {};
+	char* buffer_pointer = buffer;
+	int size_buffer = 256;
+	int written = sprintf_s(buffer_pointer, size_buffer, "%s:\n", var_name);
+	buffer_pointer += written;
+	size_buffer -= written;
+
+	for(int i = 0; i < meta_count; ++i) {
+		struct_meta_info member = meta[i];
+		char *m = static_cast<char *>(data) + member.offset;
+		switch(member.type) {
+			case type_uint32:
+				written = sprintf_s(buffer_pointer, size_buffer, "%s : %d\n", member.name, *reinterpret_cast<uint32 *>(m));
+				break;
+			case type_int:
+				written = sprintf_s(buffer_pointer, size_buffer, "%s : %d\n", member.name, *reinterpret_cast<int *>(m));
+				break;
+			case type_float:
+				written = sprintf_s(buffer_pointer, size_buffer, "%s : %f\n", member.name, *reinterpret_cast<float *>(m));
+				break;
+			case type_vec2: {
+				vec2 *vec = reinterpret_cast<vec2 *>(m);
+				written = sprintf_s(buffer_pointer, size_buffer, "%s : (x: %f, y: %f)\n", member.name, vec->x, vec->y);
+			} break; 
+
+			case type_vec4: {
+				vec4 *vec = reinterpret_cast<vec4 *>(m);
+				written = sprintf_s(buffer_pointer, size_buffer, "%s : (x: %f, y: %f, z: %f, w:%f)\n", member.name, vec->x, vec->y, vec->z, vec->w);
+			} break; 
+
+			case type_sh_circle: {
+				// written = sprintf_s(buffer_pointer, size_buffer, "%s: ", member.name);
+				write_to_gl_log(buffer);
+				sh_circle *circ = *reinterpret_cast<sh_circle **>(m);
+
+				if(member.flags & meta_pointer) {
+					DUMP_SH_CIRCLE(circ);
+
+				}
+
+
+				buffer_pointer = buffer;
+				buffer_pointer[0] = 0;
+				written = 0;
+				size_buffer = 256;
+			} break;
+
+			case type_sh_line: {
+				// written = sprintf_s(buffer_pointer, size_buffer, "%s: ", member.name);
+				write_to_gl_log(buffer);
+				sh_line *line = *reinterpret_cast<sh_line **>(m);
+				if(member.flags & meta_pointer) {
+					DUMP_SH_LINE(line);
+				}
+
+				buffer_pointer = buffer;
+				buffer_pointer[0] = 0;
+				written = 0;
+				size_buffer = 256;
+
+			} break;
+
+		}
+
+		buffer_pointer += written;
+		size_buffer -= written;
+		written = 0;
+	}
+
+
+	write_to_gl_log(buffer);
+}
+
+void dump_log_stamp(char* text, int line_number, char* file_name) {
+	char buffer[128];
+	sprintf_s(buffer, 128, "#%s:%d %s", file_name, line_number, text);
+	write_to_gl_log(buffer);
+}
+

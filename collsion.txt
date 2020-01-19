@@ -1,0 +1,30 @@
+@sharlock93
+the traditional solution to this, at least twenty years ago, is to use minkowski sum (well, difference) and point-vs-shape raycasting to get exact results
+10:38
+: the tricky part is how to combine continuous collision detection with overlap tolerances
+10:38
+: yeah, essentially for simple objects (spheres/ellipsoids/capsules) vs triangles, it boils down to a few quadratic equations.
+10:38
+: isn't continuous collision detection just circle swept lines?
+10:39Turbo
+: above is easy math for circle swept lines (and generalizes to other shapes besides circles)
+10:39
+: afaik when you want to support arbitrary convex shapes, it gets a bit messy
+10:39
+: hmmm, okay, I will take note of it, point vs shape ray casting :D
+thanks
+10:39Turbo
+: @sharlock
+both of them combined
+10:40
+: isn't that just GJK to an extend?
+10:40Turbo
+: you use minkowski difference to reduce moving shape to a point, and expand the target to more complicate shape
+10:40Turbo
+: then moving shape becomes ray, so its ray vs complicated shape
+10:40
+: as long as you don't handle overlaps there are robust solutions, but as soon as you need to recover from a deep penetration the numerical issues creep in
+10:41Turbo
+: well, if you have to recover from a deep penetration you're probably not doing CCD right
+10:41
+: or your solver is not converging, or you had a large force in your simulation

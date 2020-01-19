@@ -493,8 +493,9 @@ void sh_parse_inspect(stream_data *stream) {
 int main(int argc, char ** argv) {
         char *files_to_parse[] = {
                 "header/grid_managment.h",
-                "S://Code//libs//lib//include//Shar//headers/sh_circle.h",
-                "S://Code//libs//lib//include//Shar//headers/shar.h"
+                "W://code//libs//lib//include//Shar//headers/sh_circle.h",
+                "W://code//libs//lib//include//Shar//headers/sh_line.h",
+                "W://code//libs//lib//include//Shar//headers/shar.h"
         };
 
         int array_size = sizeof(files_to_parse)/sizeof(files_to_parse[0]);
@@ -523,7 +524,7 @@ int main(int argc, char ** argv) {
                 free(file_data);
         }
 
-        FILE *sh_types_h = fopen("header/sh_meta_types.h", "w");
+        FILE* sh_types_h = fopen("header/sh_meta_types.h", "w");
         fprintf(sh_types_h, "#ifndef SH_META_TYPES_H\n");
         fprintf(sh_types_h, "#define SH_META_TYPES_H\n");
         fprintf(sh_types_h, "enum member_type {\n");
@@ -532,7 +533,18 @@ int main(int argc, char ** argv) {
                 //printf("type_%s\n", type->name);
         }
         fprintf(sh_types_h, "};\n");
+        fprintf(sh_types_h, "\n\n");
+
+
+	for(struct_types_seen *type = first_struct_type; type; type = type->next) {
+		fprintf(sh_types_h, "#define DUMP_%s(t)", _strupr(type->name));
+		fprintf(sh_types_h, "\t\t");
+		fprintf(sh_types_h, "dump_object_log((void*)t, class_%s, array_count(class_%s), #t)\n", _strlwr(type->name), type->name);
+		//printf("type_%s\n", type->name);
+	}
+
          
         fprintf(sh_types_h, "#endif SH_META_TYPES_H\n");
+	fclose(sh_types_h);
         return 0;
 }

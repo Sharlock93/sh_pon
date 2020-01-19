@@ -34,8 +34,7 @@ struct debug_timed_block {
     }
 };
 
-struct sh_ui_state {
-    unsigned int hot_object;
+struct sh_ui_state { unsigned int hot_object;
     unsigned int active_object;
 };
 
@@ -77,8 +76,13 @@ int sh_button(game_state *gs, unsigned int id, vec2 position, char *text, vec4 c
 void write_to_log(game_state *gs, char *str);
 void write_to_gl_log(char *str);
 void dump_struct_to_screen(void *data, struct_meta_info *meta, int meta_count, int font_size, vec2 *pos);
+
+void dump_object_log(void* data, struct_meta_info* met, int meta_count, char* var_name);
+void dump_log_stamp(char* text, int line_number, char* file_name);
+
 int32 has_mouse_clicked_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos);
 int32 has_mouse_hovered_text(sh_fnt *fnt, input_state *input, char *text, int font_size, vec2 pos);
 sh_rect_container get_text_rect(sh_fnt *fnt, int font_size, char *text, vec2 pos);
 
+#define DUMP_STAMP(text) dump_log_stamp(text, __LINE__, __FILE__);
 #endif

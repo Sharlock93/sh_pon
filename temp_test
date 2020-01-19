@@ -1,0 +1,26 @@
+
+
+void check_colision(game_object 1, game_object 2) {
+    if(1 & 2 collide) push (pair(collision queue, 1, 2));
+}
+
+
+
+for each queue 
+    obj1 = pair_objects.1
+    obj2 = pair_boject.2
+
+    if ( obj1->resolve && object2->resolve collide )
+	pair_object_resolve_info and data
+	pair_object_needs resolution;
+    else pop_object_pair
+
+end 
+
+
+
+for each_queue pop resolve
+    pair_object_data
+    objt.1 move to proper location and update forces
+    obj2. move to proper location and update forces
+end 

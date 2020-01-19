@@ -445,11 +445,9 @@ game_object* make_sh_circle(int id, float x, float y, float radius,
     ball_obj->circ = new sh_circle(x, y, radius, direction, color, vec2(x, y));
     ball_obj->velocity = velocity;
 
-    ball_obj->vectors = (vec2 *) malloc(sizeof(vec2)); 
+    ball_obj->forces = nullptr;//(vec2 *) malloc(sizeof(vec2)); 
     ball_obj->vec_capacity = 1;
     ball_obj->vec_nums = 1;
-    ball_obj->vectors->x = 0;
-    ball_obj->vectors->y = 0;
 
     ball_obj->previous_pos = vec2(x, y) - velocity*direction*dt; //@Todo(sharo): pass in dt?
 
@@ -694,3 +692,34 @@ int pop_element(draw_stack *stack, draw_element *elem) {
     *elem = stack->elements[--stack->elem_count];
     return 1;
 }
+
+void sh_col_q_init(sh_col_queue* q, int init_capacity) {
+    q->q = (sh_col_info*) malloc(sizeof(sh_col_info)*init_capacity);
+    q->capacity = init_capacity;
+    q->size = 0;
+}
+
+void sh_col_q_push(sh_col_queue* q, sh_col_info col_pair) {
+    if(q->size >= q->capacity) {
+	//need to grow
+    }
+
+
+    //need to check tail and head places
+    // if(( q->head - q->tail) < 0 ) {
+    //
+    // }
+
+    q->q[q->head] = col_pair;
+    q->head = ++q->head % q->capacity;
+}
+
+sh_col_info sh_col_q_pop(sh_col_queue* q) {
+    int cur_index = q->tail;
+    
+    q->tail = ++q->tail%q->capacity;
+
+    return q->q[cur_index];
+}
+
+

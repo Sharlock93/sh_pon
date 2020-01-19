@@ -16,6 +16,7 @@
 #include <grid_managment.h>
 #include <game_math.h>
 #include <game_debug_screen.h>
+#include <sh_phy.h>
 
 #include "sh_generated.cpp"
 #include "game_math.cpp"
@@ -23,7 +24,7 @@
 #include "sh_fnt_reader.cpp"
 #include "sh_png_reader.cpp"
 #include "grid_managment.cpp"
-
+#include "sh_phy.cpp"
 
 struct tree {
         char *name;

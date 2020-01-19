@@ -11,7 +11,7 @@
  *
  *
  */
-
+/*
 struct sh_vec2 {
 	float x;
 	float y;
@@ -37,4 +37,6 @@ struct sh_mat4 {
 		float pm[4][4];
 	};
 };
+*/
+
 #endif
